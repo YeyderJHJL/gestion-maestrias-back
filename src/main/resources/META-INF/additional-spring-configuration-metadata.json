@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "app.gcs.bucket",
+      "type": "java.lang.String",
+      "description": "Google Cloud Storage bucket used by the application."
+    }
+  ]
+}

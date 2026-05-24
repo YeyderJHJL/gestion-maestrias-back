@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: masters-api
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+          lob:
+            non_contextual_creation: true
+        order_inserts: true
+        order_updates: true
+
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID:masters-dev}
+      storage:
+        enabled: true
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+app:
+  gcs:
+    bucket: ${GCS_BUCKET:masters-dev}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /docs/v1/openapi.json
+  swagger-ui:
+    path: /docs/v1
+    operations-sorter: method
+    tags-sorter: alpha
+    persist-authorization: true
+  show-actuator: false
