@@ -9,11 +9,11 @@ RUN mkdir -p /app/build /home/gradle/.gradle \
 ENV SPRING_PROFILES_ACTIVE=dev
 ENV ENABLE_DEBUG=true
 ENV GRADLE_USER_HOME=/home/gradle/.gradle
-ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx1g"
+ENV GRADLE_OPTS="-Xmx512m"
 ENV STORAGE_EMULATOR_HOST=http://gcs:4443
 ENV GCP_PROJECT_ID=masters-dev
 ENV GCS_BUCKET=masters-dev
 
 EXPOSE 8080 5005 35729
 
-CMD ["sh", "-c", "./gradlew classes --continuous --no-daemon -x test -q & ./gradlew bootRun --no-daemon"]
+CMD ["sh", "-c", "./gradlew classes -x test -q && ./gradlew classes --continuous -x test -q & ./gradlew bootRun"]
