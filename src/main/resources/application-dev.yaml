@@ -3,7 +3,7 @@ spring:
     compose:
       enabled: false
   datasource:
-    url: ${DB_URL:jdbc:postgresql://host:5432/masters}
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/postgres}
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: org.postgresql.Driver
