@@ -45,14 +45,12 @@ public class AssignmentService {
 
 	@Transactional
 	public AssignmentResponse create(AssignmentRequest request) {
+		if (assignmentRepository.existsByCourse_IdAndTeacher_Id(request.courseId(), request.teacherId())) {
+			throw new BusinessException("Assignment already exists for this course and teacher");
+		}
 		Course course = courseService.getReference(request.courseId());
 		Teacher teacher = teacherService.getReference(request.teacherId());
-		AssignmentId id = new AssignmentId(course.getId(), teacher.getId());
-		if (assignmentRepository.existsById(id)) {
-			throw new BusinessException("Assignment already exists");
-		}
 		Assignment assignment = new Assignment();
-		assignment.setId(id);
 		assignment.setCourse(course);
 		assignment.setTeacher(teacher);
 		assignment.setAssignmentDate(request.assignmentDate());
@@ -62,7 +60,7 @@ public class AssignmentService {
 	@Transactional
 	public AssignmentResponse update(UUID courseId, UUID teacherId, AssignmentRequest request) {
 		if (!courseId.equals(request.courseId()) || !teacherId.equals(request.teacherId())) {
-			throw new BusinessException("Assignment id cannot be changed");
+			throw new BusinessException("Assignment course and teacher cannot be changed");
 		}
 		Assignment assignment = findEntity(courseId, teacherId);
 		assignment.setAssignmentDate(request.assignmentDate());
@@ -75,8 +73,7 @@ public class AssignmentService {
 	}
 
 	private Assignment findEntity(UUID courseId, UUID teacherId) {
-		AssignmentId id = new AssignmentId(courseId, teacherId);
-		return assignmentRepository.findById(id)
+		return assignmentRepository.findByCourse_IdAndTeacher_Id(courseId, teacherId)
 				.orElseThrow(() -> new ResourceNotFoundException("Assignment", "%s/%s".formatted(courseId, teacherId)));
 	}
 
