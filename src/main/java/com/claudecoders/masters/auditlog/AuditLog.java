@@ -38,9 +38,6 @@ public class AuditLog extends CreatedEntity {
 	@Column(name = "action", nullable = false, length = 100)
 	private String action;
 
-	@Column(name = "field_name", length = 100)
-	private String fieldName;
-
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "old_value", columnDefinition = "jsonb")
 	private JsonNode oldValue;
