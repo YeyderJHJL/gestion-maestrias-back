@@ -1,6 +1,7 @@
 package com.claudecoders.masters.user;
 
 import com.claudecoders.masters.shared.enums.LabeledEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum UserRole implements LabeledEnum {
@@ -12,6 +13,11 @@ public enum UserRole implements LabeledEnum {
 
 	UserRole(String label) {
 		this.label = label;
+	}
+
+	@JsonCreator
+	public static UserRole fromValue(String value) {
+		return LabeledEnum.fromValue(UserRole.class, value);
 	}
 
 	@Override

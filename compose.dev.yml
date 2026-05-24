@@ -15,11 +15,13 @@ services:
       - .:/app
       - ${GRADLE_CACHE_DIR:-~/.gradle}:/home/gradle/.gradle
       - build-cache:/app/build
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
       gcs:
-        condition: service_healthy
+        condition: service_started
 
   postgres:
     image: postgres:18-alpine
@@ -31,7 +33,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 5s

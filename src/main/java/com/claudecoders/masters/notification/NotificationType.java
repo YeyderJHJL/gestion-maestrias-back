@@ -1,6 +1,7 @@
 package com.claudecoders.masters.notification;
 
 import com.claudecoders.masters.shared.enums.LabeledEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum NotificationType implements LabeledEnum {
@@ -16,6 +17,11 @@ public enum NotificationType implements LabeledEnum {
 
 	NotificationType(String label) {
 		this.label = label;
+	}
+
+	@JsonCreator
+	public static NotificationType fromValue(String value) {
+		return LabeledEnum.fromValue(NotificationType.class, value);
 	}
 
 	@Override

@@ -1,4 +1,21 @@
 package com.claudecoders.masters.user.dto;
 
-public record UserResponse() {
+import com.claudecoders.masters.user.UserRole;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
+import java.util.UUID;
+
+@Schema(description = "User response")
+public record UserResponse(
+		UUID id,
+		String googleSub,
+		String email,
+		String firstName,
+		String lastName,
+		String dni,
+		UserRole role,
+		Boolean active,
+		Instant createdAt,
+		Instant updatedAt
+) {
 }

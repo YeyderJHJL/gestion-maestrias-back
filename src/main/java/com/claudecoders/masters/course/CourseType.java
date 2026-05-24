@@ -1,6 +1,7 @@
 package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.shared.enums.LabeledEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CourseType implements LabeledEnum {
@@ -12,6 +13,11 @@ public enum CourseType implements LabeledEnum {
 
 	CourseType(String label) {
 		this.label = label;
+	}
+
+	@JsonCreator
+	public static CourseType fromValue(String value) {
+		return LabeledEnum.fromValue(CourseType.class, value);
 	}
 
 	@Override

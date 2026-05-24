@@ -3,6 +3,9 @@ FROM eclipse-temurin:25-jdk-noble
 
 WORKDIR /app
 
+RUN mkdir -p /app/build /home/gradle/.gradle \
+    && chown -R 1000:1000 /app /home/gradle
+
 ENV SPRING_PROFILES_ACTIVE=dev
 ENV ENABLE_DEBUG=true
 ENV GRADLE_USER_HOME=/home/gradle/.gradle

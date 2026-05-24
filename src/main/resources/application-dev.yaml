@@ -13,7 +13,7 @@ spring:
       connection-timeout: 30000
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update}
+      ddl-auto: ${JPA_DDL_AUTO:none}
     show-sql: ${JPA_SHOW_SQL:true}
   devtools:
     restart:
@@ -24,7 +24,11 @@ spring:
       enabled: true
   cloud:
     gcp:
+      core:
+        enabled: false
       project-id: masters-dev
+      storage:
+        enabled: false
   web:
     error:
       include-message: always
@@ -48,7 +52,3 @@ management:
   endpoint:
     health:
       show-details: always
-
-springdoc:
-  swagger-ui:
-    enabled: true
