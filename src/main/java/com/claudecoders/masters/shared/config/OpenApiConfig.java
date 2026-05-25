@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 		type = SecuritySchemeType.HTTP,
 		scheme = "bearer",
 		bearerFormat = "JWT",
-		description = "Google OAuth2 JWT token — obtener desde el flujo de login de la aplicación"
+		description = "Google OAuth2 JWT token — obtain from the application login flow"
 )
 public class OpenApiConfig {
 }

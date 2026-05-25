@@ -35,7 +35,7 @@ public class UserController {
 
 	@GetMapping("/me")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
-			description = "Obtener el perfil del usuario autenticado")
+			description = "Get current authenticated user profile")
 	@Operation(summary = "Get current authenticated user profile")
 	public ApiResponse<UserResponse> me() {
 		return ApiResponse.ok(userService.findById(SecurityHelper.currentUserId()));

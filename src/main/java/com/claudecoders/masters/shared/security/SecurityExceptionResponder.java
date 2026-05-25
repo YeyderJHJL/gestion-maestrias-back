@@ -21,11 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SecurityExceptionResponder implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-	private final ObjectMapper objectMapper;
-
-	public SecurityExceptionResponder(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
-	}
+	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,

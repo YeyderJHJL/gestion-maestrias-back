@@ -14,12 +14,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.ErrorResponseException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -83,6 +86,17 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.BAD_REQUEST, "Invalid value for parameter '%s'".formatted(ex.getName()), request);
 	}
 
+	@ExceptionHandler(NoHandlerFoundException.class)
+	public ResponseEntity<ApiError> handleNoHandler(NoHandlerFoundException ex, HttpServletRequest request) {
+		return build(HttpStatus.NOT_FOUND, "Endpoint not found", request);
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<ApiError> handleMethodNotAllowed(
+			HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+		return build(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed: " + ex.getMethod(), request);
+	}
+
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex, HttpServletRequest request) {
 		return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
@@ -95,7 +109,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<ApiError> handleMaxUploadSize(MaxUploadSizeExceededException ex, HttpServletRequest request) {
-		return build(HttpStatus.PAYLOAD_TOO_LARGE, "El archivo supera el tamaño máximo permitido", request);
+		return build(HttpStatus.PAYLOAD_TOO_LARGE, "File exceeds the maximum allowed size", request);
 	}
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
@@ -106,8 +120,24 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest request) {
+		// Handles NoResourceFoundException and other Spring MVC ErrorResponseExceptions
+		if (ex instanceof ErrorResponseException ere && !ere.getStatusCode().is5xxServerError()) {
+			HttpStatus status = HttpStatus.resolve(ere.getStatusCode().value());
+			if (status != null) {
+				return build(status, safeMessage(status), request);
+			}
+		}
 		log.error("Unhandled exception", ex);
 		return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request);
+	}
+
+	private String safeMessage(HttpStatus status) {
+		return switch (status) {
+			case NOT_FOUND -> "Endpoint not found";
+			case METHOD_NOT_ALLOWED -> "Method not allowed";
+			case UNSUPPORTED_MEDIA_TYPE -> "Unsupported media type";
+			default -> status.getReasonPhrase();
+		};
 	}
 
 	private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest request) {

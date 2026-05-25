@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  *
  * <p>Example:
  * <pre>{@code
- * @Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER}, description = "Crear un nuevo curso")
+ * @Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER}, description = "Create a new course")
  * @PostMapping
  * public ApiResponse<CourseResponse> create(...) { ... }
  * }</pre>
