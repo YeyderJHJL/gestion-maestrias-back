@@ -16,16 +16,14 @@ public class AuditLogService {
 
 	private final AuditLogRepository auditLogRepository;
 	private final UserRepository userRepository;
-	private final ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	public AuditLogService(
 			AuditLogRepository auditLogRepository,
-			UserRepository userRepository,
-			ObjectMapper objectMapper
+			UserRepository userRepository
 	) {
 		this.auditLogRepository = auditLogRepository;
 		this.userRepository = userRepository;
-		this.objectMapper = objectMapper;
 	}
 
 	@Async
