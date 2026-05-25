@@ -86,14 +86,6 @@ public class AuditLog extends CreatedEntity {
 		this.action = action;
 	}
 
-	public String getFieldName() {
-		return fieldName;
-	}
-
-	public void setFieldName(String fieldName) {
-		this.fieldName = fieldName;
-	}
-
 	public JsonNode getOldValue() {
 		return oldValue;
 	}
