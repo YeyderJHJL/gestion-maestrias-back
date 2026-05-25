@@ -1,6 +1,7 @@
 package com.claudecoders.masters.shared.config;
 
 import com.claudecoders.masters.shared.security.AppJwtAuthenticationConverter;
+import com.claudecoders.masters.shared.security.SecurityExceptionResponder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -21,13 +22,18 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
-            AppJwtAuthenticationConverter converter) throws Exception {
+            AppJwtAuthenticationConverter converter,
+            SecurityExceptionResponder responder) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(converter))
+                        .authenticationEntryPoint(responder))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(responder)
+                        .accessDeniedHandler(responder));
         return http.build();
     }
 }

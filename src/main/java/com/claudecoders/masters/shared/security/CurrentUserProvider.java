@@ -21,6 +21,9 @@ public class CurrentUserProvider {
 		}
 
 		Object principal = authentication.getPrincipal();
+		if (principal instanceof AppUserPrincipal appPrincipal) {
+			return Optional.of(appPrincipal.userId());
+		}
 		if (principal instanceof UUID userId) {
 			return Optional.of(userId);
 		}

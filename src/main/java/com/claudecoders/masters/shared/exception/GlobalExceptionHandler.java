@@ -83,6 +83,11 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.BAD_REQUEST, "Invalid value for parameter '%s'".formatted(ex.getName()), request);
 	}
 
+	@ExceptionHandler(UnauthorizedException.class)
+	public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex, HttpServletRequest request) {
+		return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
 		return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);

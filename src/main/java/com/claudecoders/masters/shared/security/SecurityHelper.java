@@ -1,7 +1,7 @@
 package com.claudecoders.masters.shared.security;
 
+import com.claudecoders.masters.shared.exception.UnauthorizedException;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -18,6 +18,6 @@ public final class SecurityHelper {
         if (auth != null && auth.getPrincipal() instanceof AppUserPrincipal principal) {
             return principal;
         }
-        throw new AccessDeniedException("Autenticación requerida");
+        throw new UnauthorizedException("Authentication required");
     }
 }

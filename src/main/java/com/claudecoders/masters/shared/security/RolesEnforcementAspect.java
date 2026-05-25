@@ -1,6 +1,7 @@
 package com.claudecoders.masters.shared.security;
 
 import com.claudecoders.masters.shared.enums.UserRole;
+import com.claudecoders.masters.shared.exception.UnauthorizedException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -36,7 +37,7 @@ public class RolesEnforcementAspect {
 
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !auth.isAuthenticated() || isAnonymous(auth)) {
-			throw new AccessDeniedException("Authentication required");
+			throw new UnauthorizedException("Authentication required");
 		}
 
 		UserRole[] required = requiredRoles(method, beanType);
