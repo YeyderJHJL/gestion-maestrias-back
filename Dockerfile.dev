@@ -1,11 +1,21 @@
 # syntax=docker/dockerfile:1.7
 FROM eclipse-temurin:25-jdk-noble
 
+ARG GRADLE_VERSION=9.4.1
+
 WORKDIR /app
 
-RUN mkdir -p /app/build /home/gradle/.gradle \
-    && chown -R 1000:1000 /app /home/gradle \
-    && apt-get update -qq && apt-get install -y --no-install-recommends dos2unix && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends wget unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget -qO /tmp/gradle.zip \
+        https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip \
+    && unzip -q /tmp/gradle.zip -d /opt \
+    && ln -s /opt/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle \
+    && rm /tmp/gradle.zip
+
+COPY docker/dev-api.sh /usr/local/bin/dev-api
+RUN chmod +x /usr/local/bin/dev-api
 
 ENV SPRING_PROFILES_ACTIVE=dev
 ENV ENABLE_DEBUG=true
@@ -17,4 +27,4 @@ ENV GCS_BUCKET=masters-dev
 
 EXPOSE 8080 5005 35729
 
-CMD ["sh", "-c", "dos2unix gradlew && chmod +x gradlew && ./gradlew classes -x test -q && ./gradlew classes --continuous -x test -q & ./gradlew bootRun"]
+CMD ["dev-api"]

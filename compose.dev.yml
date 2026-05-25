@@ -6,15 +6,13 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     container_name: masters-bck
-    user: "1000:1000"
     ports:
       - "${PORT:-8080}:8080"
       - "5005:5005"
       - "35729:35729"
     volumes:
       - .:/app
-      - ${GRADLE_CACHE_DIR:-~/.gradle}:/home/gradle/.gradle
-      - build-cache:/app/build
+      - ./.gradle/dependencies:/home/gradle/.gradle
     env_file:
       - .env
     depends_on:
@@ -48,6 +46,3 @@ services:
       - "4443:4443"
     volumes:
       - ./gcs_data:/data
-
-volumes:
-  build-cache:
