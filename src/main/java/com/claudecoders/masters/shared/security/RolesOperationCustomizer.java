@@ -1,6 +1,6 @@
 package com.claudecoders.masters.shared.security;
 
-import com.claudecoders.masters.user.UserRole;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.util.Arrays;
@@ -14,9 +14,9 @@ import org.springframework.web.method.HandlerMethod;
 public class RolesOperationCustomizer implements OperationCustomizer {
 
 	private static final String SCHEME = "bearerAuth";
-	private static final String ROLE_PREFIX = "**Roles requeridos:** ";
-	private static final String PUBLIC_NOTE = "> Acceso público — no se requiere autenticación.";
-	private static final String DEFAULT_NOTE = "> Acceso restringido a **ADMIN** (por defecto).";
+	private static final String ROLE_PREFIX = "**Required:** ";
+	private static final String PUBLIC_NOTE = "> Public access — no authentication required.";
+	private static final String DEFAULT_NOTE = "> Restricted access to **ADMIN** (default).";
 
 	@Override
 	public Operation customize(Operation operation, HandlerMethod handlerMethod) {
@@ -28,11 +28,11 @@ public class RolesOperationCustomizer implements OperationCustomizer {
 		Authorize authorize = resolve(handlerMethod, Authorize.class);
 		if (authorize != null) {
 			String roles = Arrays.stream(authorize.roles())
-					.map(UserRole::name)
+					.map(role -> "**" + role.name() + "**")
 					.collect(Collectors.joining(", "));
 			String note = ROLE_PREFIX + roles;
 			if (!authorize.description().isBlank()) {
-				note += "\\\n> " + authorize.description();
+				note += "\n\n&gt; " + authorize.description();
 			}
 			return prepend(operation, note).addSecurityItem(new SecurityRequirement().addList(SCHEME));
 		}

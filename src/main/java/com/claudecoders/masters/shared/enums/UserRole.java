@@ -1,6 +1,5 @@
-package com.claudecoders.masters.user;
+package com.claudecoders.masters.shared.enums;
 
-import com.claudecoders.masters.shared.enums.LabeledEnum;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 

@@ -1,6 +1,7 @@
 package com.claudecoders.masters.user;
 
 import com.claudecoders.masters.shared.audit.BaseEntity;
+import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.audit.Auditable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

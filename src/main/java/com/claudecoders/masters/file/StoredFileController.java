@@ -4,7 +4,7 @@ import com.claudecoders.masters.file.dto.StoredFileResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
-import com.claudecoders.masters.user.UserRole;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class StoredFileController {
 	}
 
 	@GetMapping
-	@Authorize(roles = {UserRole.ADMIN}, description = "Listar todos los archivos subidos")
+	@Authorize(roles = {UserRole.ADMIN}, description = "List all stored files with metadata (no signed URLs)")
 	@Operation(summary = "List all stored files")
 	public ApiResponse<List<StoredFileResponse>> findAll() {
 		return ApiResponse.ok(fileService.findAll());
@@ -42,7 +42,7 @@ public class StoredFileController {
 
 	@GetMapping("/{id}")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
-			description = "Ver metadatos y URL firmada de un archivo")
+			description = "Get file metadata and signed download URL")
 	@Operation(summary = "Get file metadata and signed download URL")
 	public ApiResponse<StoredFileResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(fileService.findById(id));
@@ -51,18 +51,18 @@ public class StoredFileController {
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
-			description = "Subir un archivo a GCS")
+			description = "Upload a file to GCS")
 	@Operation(summary = "Upload a file — requires authentication")
 	public ApiResponse<StoredFileResponse> upload(@RequestParam MultipartFile file) throws IOException {
 		return ApiResponse.ok(
 				fileService.upload(file, SecurityHelper.currentUserId()),
-				"Archivo subido correctamente"
+				"File uploaded successfully"
 		);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@Authorize(roles = {UserRole.ADMIN}, description = "Eliminar un archivo de GCS y la base de datos")
+	@Authorize(roles = {UserRole.ADMIN}, description = "Delete a file from GCS and the database")
 	@Operation(summary = "Delete a stored file")
 	public void delete(@PathVariable UUID id) {
 		fileService.delete(id);

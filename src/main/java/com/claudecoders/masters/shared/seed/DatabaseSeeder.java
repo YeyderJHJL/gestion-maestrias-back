@@ -4,7 +4,7 @@ import com.claudecoders.masters.program.Program;
 import com.claudecoders.masters.program.ProgramRepository;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.user.UserRepository;
-import com.claudecoders.masters.user.UserRole;
+import com.claudecoders.masters.shared.enums.UserRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

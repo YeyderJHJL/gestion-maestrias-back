@@ -1,6 +1,6 @@
 package com.claudecoders.masters.shared.security;
 
-import com.claudecoders.masters.user.UserRole;
+import com.claudecoders.masters.shared.enums.UserRole;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -40,7 +40,7 @@ public class RolesEnforcementAspect {
 		}
 
 		UserRole[] required = requiredRoles(method, beanType);
-		boolean hasRole = Arrays.stream(required)
+		boolean hasRole = isAdmin(auth) || Arrays.stream(required)
 				.anyMatch(role -> auth.getAuthorities().stream()
 						.anyMatch(a -> a.getAuthority().equals("ROLE_" + role.name())));
 
@@ -48,6 +48,11 @@ public class RolesEnforcementAspect {
 			throw new AccessDeniedException("Insufficient role");
 		}
 		return pjp.proceed();
+	}
+
+	private boolean isAdmin(Authentication auth) {
+		return auth.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_" + UserRole.ADMIN.name()));
 	}
 
 	private boolean isPublic(Method method, Class<?> beanType) {

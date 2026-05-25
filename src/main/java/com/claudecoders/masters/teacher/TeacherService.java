@@ -5,7 +5,7 @@ import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
 import com.claudecoders.masters.user.User;
-import com.claudecoders.masters.user.UserRole;
+import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.user.UserService;
 import java.util.List;
 import java.util.UUID;
