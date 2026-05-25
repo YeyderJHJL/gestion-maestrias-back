@@ -28,6 +28,8 @@ server:
 app:
   gcs:
     bucket: ${GCS_BUCKET:masters-dev}
+  seed:
+    admin-email: ${ADMIN_EMAIL:}
 
 management:
   endpoints:
