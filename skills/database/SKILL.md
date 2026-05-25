@@ -1,17 +1,43 @@
 ---
 name: database
-description: Referencia de base de datos — estrategia de IDs, soft delete con índices parciales, enums PostgreSQL, tabla stored_files, patrones de query, convenciones de columnas. Activar al crear o modificar entidades JPA, escribir queries custom, mapear enums de PostgreSQL, trabajar con archivos o responder preguntas sobre el schema.
+description: Referencia de base de datos — Flyway, estrategia de IDs, soft delete con índices parciales, enums PostgreSQL, tabla stored_files, patrones de query, convenciones de columnas. Activar al crear o modificar entidades JPA, escribir queries custom, mapear enums de PostgreSQL, trabajar con archivos, migraciones o responder preguntas sobre el schema.
 ---
 
 # Database
 
 ## Stack
 
-PostgreSQL 18-alpine (Docker dev). Schema gestionado manualmente — no hay Flyway ni Liquibase todavía. `ddl-auto: none` en dev. Para ver el schema actual, conectar a la BD con:
+PostgreSQL 18-alpine (Docker dev). Schema gestionado por **Flyway** — migraciones en `src/main/resources/db/migration/`. `ddl-auto: none` (dev) y `validate` (prod). Flyway corre automáticamente al arrancar la aplicación.
 
 ```bash
+# Conectar a la BD
 docker exec masters-db psql -U root -d postgres
+
+# Ver historial de migraciones aplicadas
+docker exec masters-db psql -U root -d postgres -c "SELECT * FROM flyway_schema_history;"
 ```
+
+## Flyway
+
+Convenciones de naming para archivos de migración:
+
+| Tipo | Formato | Ejemplo |
+|---|---|---|
+| Versioned (irreversible) | `V{n}__{descripcion}.sql` | `V2__add_colum_x.sql` |
+| Repeatable (idempotente) | `R__{descripcion}.sql` | `R__refresh_view.sql` |
+
+- Cada archivo se ejecuta **una sola vez** (versioned) o **cuando cambia su checksum** (repeatable).
+- Nunca modificar un archivo de migración ya aplicado — crear uno nuevo.
+- `baseline-on-migrate: true` y `baseline-version: 1` permiten que bases existentes (sin `flyway_schema_history`) convivan. Para instalaciones frescas, borra `postgres_data/` y relanza el compose.
+- Los ENUMs de PostgreSQL deben crearse **antes** de las tablas que los usan (orden garantizado en un único archivo de migración).
+
+### Para agregar una migración nueva
+
+```
+src/main/resources/db/migration/V2__descripcion_corta.sql
+```
+
+No tocar `V1__initial_schema.sql`.
 
 ## Estrategia de IDs
 
