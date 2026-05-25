@@ -1,6 +1,7 @@
 package com.claudecoders.masters.user;
 
 import com.claudecoders.masters.shared.audit.BaseEntity;
+import com.claudecoders.masters.shared.audit.Auditable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
@@ -20,7 +22,17 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "users")
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class User extends BaseEntity {
+public class User extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"googleSub",
+			"email",
+			"firstName",
+			"lastName",
+			"dni",
+			"role",
+			"active"
+	);
 
 	@Id
 	@GeneratedValue
@@ -113,5 +125,15 @@ public class User extends BaseEntity {
 
 	public void setActive(Boolean active) {
 		this.active = active;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }
