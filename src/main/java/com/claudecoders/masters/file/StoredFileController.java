@@ -3,6 +3,7 @@ package com.claudecoders.masters.file;
 import com.claudecoders.masters.file.dto.StoredFileResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.user.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,20 +48,16 @@ public class StoredFileController {
 		return ApiResponse.ok(fileService.findById(id));
 	}
 
-	/**
-	 * uploaderId is temporary — in production this comes from the authenticated JWT principal.
-	 * Placeholder until the full OAuth2 login flow is implemented.
-	 */
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
 			description = "Subir un archivo a GCS")
-	@Operation(summary = "Upload a file")
-	public ApiResponse<StoredFileResponse> upload(
-			@RequestParam MultipartFile file,
-			@RequestParam UUID uploaderId
-	) throws IOException {
-		return ApiResponse.ok(fileService.upload(file, uploaderId), "Archivo subido correctamente");
+	@Operation(summary = "Upload a file — requires authentication")
+	public ApiResponse<StoredFileResponse> upload(@RequestParam MultipartFile file) throws IOException {
+		return ApiResponse.ok(
+				fileService.upload(file, SecurityHelper.currentUserId()),
+				"Archivo subido correctamente"
+		);
 	}
 
 	@DeleteMapping("/{id}")

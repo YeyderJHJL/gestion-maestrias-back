@@ -1,6 +1,8 @@
 package com.claudecoders.masters.user;
 
 import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.user.dto.UserRequest;
 import com.claudecoders.masters.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,14 @@ public class UserController {
 
 	public UserController(UserService userService) {
 		this.userService = userService;
+	}
+
+	@GetMapping("/me")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
+			description = "Obtener el perfil del usuario autenticado")
+	@Operation(summary = "Get current authenticated user profile")
+	public ApiResponse<UserResponse> me() {
+		return ApiResponse.ok(userService.findById(SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "List users")
