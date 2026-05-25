@@ -2,6 +2,17 @@ spring:
   application:
     name: masters-api
 
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${GOOGLE_OAUTH_ISSUER_URI:https://accounts.google.com}
+
   jpa:
     open-in-view: false
     properties:
@@ -30,6 +41,8 @@ app:
     bucket: ${GCS_BUCKET:masters-dev}
   seed:
     admin-email: ${ADMIN_EMAIL:}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 management:
   endpoints:
