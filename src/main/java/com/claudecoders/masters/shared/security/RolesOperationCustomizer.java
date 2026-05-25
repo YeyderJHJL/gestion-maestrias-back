@@ -15,8 +15,8 @@ public class RolesOperationCustomizer implements OperationCustomizer {
 
 	private static final String SCHEME = "bearerAuth";
 	private static final String ROLE_PREFIX = "**Required:** ";
-	private static final String PUBLIC_NOTE = "> Public access — no authentication required.";
-	private static final String DEFAULT_NOTE = "> Restricted access to **ADMIN** (default).";
+	private static final String PUBLIC_NOTE = "&gt; Public access — no authentication required.";
+	private static final String DEFAULT_NOTE = "&gt; Restricted access to **ADMIN** (default).";
 
 	@Override
 	public Operation customize(Operation operation, HandlerMethod handlerMethod) {

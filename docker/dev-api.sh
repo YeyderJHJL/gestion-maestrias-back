@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-POLL_INTERVAL="${HOT_RELOAD_POLL_INTERVAL:-2}"
+POLL_INTERVAL="${HOT_RELOAD_POLL_INTERVAL:-1}"
 STAMP_FILE="/tmp/masters-last-compile"
 WATCH_PID=""
 
