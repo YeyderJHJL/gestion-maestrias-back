@@ -7,6 +7,8 @@ import com.google.cloud.storage.Storage.SignUrlOption;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,10 @@ public class GcsStorageService {
 
 	@Value("${app.gcs.bucket}")
 	private String bucket;
+
+	// Set in Dockerfile.dev; absent in prod — used to detect emulator mode
+	@Value("${STORAGE_EMULATOR_HOST:}")
+	private String emulatorHost;
 
 	public GcsStorageService(Storage storage) {
 		this.storage = storage;
@@ -32,10 +38,16 @@ public class GcsStorageService {
 	}
 
 	/**
-	 * Generates a signed URL valid for 15 minutes. The client uses this URL directly
-	 * to download the file — the actual bucket path is never exposed.
+	 * In dev (emulator), returns a direct download URL accessible from the browser via localhost.
+	 * In prod, generates a signed URL valid for 15 minutes.
 	 */
 	public String signedDownloadUrl(String objectKey) {
+		if (!emulatorHost.isBlank()) {
+			String browserHost = emulatorHost.replace("//gcs:", "//localhost:");
+			String encodedKey = URLEncoder.encode(objectKey, StandardCharsets.UTF_8);
+			return "%s/download/storage/v1/b/%s/o/%s?alt=media"
+					.formatted(browserHost, bucket, encodedKey);
+		}
 		BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucket, objectKey)).build();
 		URL url = storage.signUrl(blobInfo, 15, TimeUnit.MINUTES, SignUrlOption.withV4Signature());
 		return url.toString();

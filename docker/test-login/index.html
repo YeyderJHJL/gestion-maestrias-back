@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masters API — Login Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #333; }
+
+    .field { margin-bottom: 0.75rem; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
+    input[type="text"] {
+      width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ddd;
+      border-radius: 6px; font-size: 0.9rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #4285f4; }
+
+    button {
+      padding: 0.5rem 1.2rem; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 0.875rem; font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #4285f4; color: #fff; }
+    .btn-danger  { background: #ea4335; color: #fff; }
+    .btn-neutral { background: #e8eaed; color: #333; }
+    .btn-sm { padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+
+    .badge {
+      display: inline-block; padding: 0.2rem 0.6rem;
+      border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+    }
+    .badge-green  { background: #e6f4ea; color: #137333; }
+    .badge-orange { background: #fce8e6; color: #c5221f; }
+    .badge-blue   { background: #e8f0fe; color: #1a73e8; }
+
+    .user-info {
+      display: flex; align-items: center; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .user-info img {
+      width: 52px; height: 52px; border-radius: 50%;
+      border: 2px solid #4285f4;
+    }
+    .user-meta { flex: 1; }
+    .user-meta strong { display: block; font-size: 1rem; }
+    .user-meta span { font-size: 0.85rem; color: #555; }
+
+    .token-box {
+      background: #f8f9fa; border: 1px solid #e0e0e0;
+      border-radius: 6px; padding: 0.6rem;
+      font-family: monospace; font-size: 0.75rem;
+      word-break: break-all; max-height: 80px;
+      overflow-y: auto; color: #333; margin-top: 0.5rem;
+    }
+    .token-exp { font-size: 0.78rem; color: #555; margin-top: 0.3rem; }
+    .token-exp.expired { color: #c5221f; font-weight: 600; }
+
+    .api-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.75rem;
+    }
+    .api-btn-card {
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .api-btn-card strong { font-size: 0.85rem; }
+    .api-btn-card span { font-size: 0.75rem; color: #666; }
+
+    .response-box {
+      background: #1e1e2e; color: #cdd6f4;
+      border-radius: 8px; padding: 1rem;
+      font-family: monospace; font-size: 0.8rem;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 320px; overflow-y: auto;
+    }
+    .response-box.ok   { border-left: 4px solid #a6e3a1; }
+    .response-box.err  { border-left: 4px solid #f38ba8; }
+    .response-meta { font-size: 0.78rem; color: #666; margin-bottom: 0.4rem; }
+
+    .file-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    input[type="file"] { flex: 1; font-size: 0.85rem; }
+
+    .step-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #4285f4; color: #fff;
+      font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem;
+    }
+    .hidden { display: none !important; }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Masters API — Login Test</h1>
+  <p class="subtitle">Página de prueba del flujo OAuth2 con Google. Solo para desarrollo.</p>
+
+  <!-- ── PASO 1: Configuración ─────────────────────────────────────── -->
+  <div class="card">
+    <h2><span class="step-number">1</span>Configuración</h2>
+    <div class="field">
+      <label>Google OAuth Client ID</label>
+      <input type="text" id="clientId"
+             placeholder="xxxx.apps.googleusercontent.com"
+             value="" />
+    </div>
+    <div class="field">
+      <label>Backend URL</label>
+      <input type="text" id="backendUrl"
+             placeholder="http://localhost:8080"
+             value="http://localhost:8080" />
+    </div>
+    <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+      <button class="btn-primary" onclick="initGoogle()">Inicializar Google Sign-In</button>
+      <button class="btn-neutral" onclick="clearAll()">Limpiar sesión</button>
+    </div>
+    <div id="init-status" style="margin-top:0.5rem; font-size:0.82rem; color:#666;"></div>
+  </div>
+
+  <!-- ── PASO 2: Login ──────────────────────────────────────────────── -->
+  <div class="card" id="login-card">
+    <h2><span class="step-number">2</span>Autenticación con Google</h2>
+    <p style="font-size:0.85rem; color:#555; margin-bottom:1rem;">
+      Inicia sesión con la cuenta de Google registrada en el sistema.
+    </p>
+    <div id="g_id_onload" data-auto_prompt="false"></div>
+    <div id="g_signin_button"></div>
+    <p style="font-size:0.78rem; color:#888; margin-top:0.6rem;">
+      El botón aparece después de inicializar. Asegúrate de que
+      <code>http://localhost:3000</code> esté en los <em>Authorized JavaScript origins</em>
+      de tu Google Cloud Console.
+    </p>
+  </div>
+
+  <!-- ── PASO 3: Info del usuario ──────────────────────────────────── -->
+  <div class="card hidden" id="user-card">
+    <h2><span class="step-number">3</span>Sesión activa</h2>
+    <div class="user-info" id="user-info"></div>
+    <hr/>
+    <strong style="font-size:0.82rem;">ID Token (enviado como Bearer)</strong>
+    <div class="token-box" id="token-preview"></div>
+    <div class="token-exp" id="token-exp"></div>
+    <div style="margin-top:0.75rem;">
+      <button class="btn-danger btn-sm" onclick="logout()">Cerrar sesión</button>
+      <button class="btn-neutral btn-sm" onclick="copyToken()">Copiar token</button>
+    </div>
+  </div>
+
+  <!-- ── PASO 4: Tests de API (requieren auth) ─────────────────────── -->
+  <div class="card hidden" id="api-card">
+    <h2><span class="step-number">4</span>Tests de API (con token)</h2>
+    <div class="api-grid">
+
+      <div class="api-btn-card">
+        <strong>GET /users/me</strong>
+        <span>Perfil del usuario autenticado</span>
+        <button class="btn-primary btn-sm" onclick="apiCall('GET', '/api/v1/users/me')">
+          Ejecutar
+        </button>
+      </div>
+
+      <div class="api-btn-card">
+        <strong>GET /users</strong>
+        <span>Listar usuarios (solo ADMIN)</span>
+        <button class="btn-primary btn-sm" onclick="apiCall('GET', '/api/v1/users')">
+          Ejecutar
+        </button>
+      </div>
+
+      <div class="api-btn-card">
+        <strong>GET /programs</strong>
+        <span>Listar programas de maestría</span>
+        <button class="btn-primary btn-sm" onclick="apiCall('GET', '/api/v1/programs')">
+          Ejecutar
+        </button>
+      </div>
+
+      <div class="api-btn-card">
+        <strong>GET /files</strong>
+        <span>Listar archivos (solo ADMIN)</span>
+        <button class="btn-primary btn-sm" onclick="apiCall('GET', '/api/v1/files')">
+          Ejecutar
+        </button>
+      </div>
+
+      <div class="api-btn-card">
+        <strong>POST /files</strong>
+        <span>Subir archivo</span>
+        <div class="file-row">
+          <input type="file" id="upload-file" />
+          <button class="btn-primary btn-sm" onclick="uploadFile()">Subir</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tests públicos (no requieren auth) ────────────────────────── -->
+  <div class="card">
+    <h2>Tests sin autenticación</h2>
+    <div class="api-grid">
+
+      <div class="api-btn-card">
+        <strong>GET /actuator/health</strong>
+        <span>Estado del backend</span>
+        <button class="btn-neutral btn-sm" onclick="apiCall('GET', '/actuator/health')">
+          Ejecutar
+        </button>
+      </div>
+
+      <div class="api-btn-card">
+        <strong>GET /programs</strong>
+        <span>Sin token (dev: permitAll)</span>
+        <button class="btn-neutral btn-sm" onclick="apiCall('GET', '/api/v1/programs', false)">
+          Ejecutar sin token
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Respuesta ─────────────────────────────────────────────────── -->
+  <div class="card hidden" id="response-card">
+    <h2>Respuesta</h2>
+    <div class="response-meta" id="response-meta"></div>
+    <div class="response-box" id="response-box"></div>
+  </div>
+
+</div>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+  let idToken = null;
+  let tokenPayload = null;
+  let expTimer = null;
+
+  // ── Persistir configuración ────────────────────────────────────────
+  window.addEventListener('load', () => {
+    const savedId  = localStorage.getItem('masters_client_id');
+    const savedUrl = localStorage.getItem('masters_backend_url');
+    if (savedId)  document.getElementById('clientId').value = savedId;
+    if (savedUrl) document.getElementById('backendUrl').value = savedUrl;
+  });
+
+  // ── Inicializar Google Sign-In ─────────────────────────────────────
+  function initGoogle() {
+    const clientId   = document.getElementById('clientId').value.trim();
+    const backendUrl = document.getElementById('backendUrl').value.trim();
+    const status     = document.getElementById('init-status');
+
+    if (!clientId) {
+      status.textContent = 'Ingresa el Google Client ID primero.';
+      status.style.color = '#c5221f';
+      return;
+    }
+
+    localStorage.setItem('masters_client_id', clientId);
+    localStorage.setItem('masters_backend_url', backendUrl || 'http://localhost:8080');
+
+    if (typeof google === 'undefined') {
+      status.textContent = 'Cargando libreria de Google... intenta de nuevo en un momento.';
+      status.style.color = '#f29900';
+      setTimeout(initGoogle, 1200);
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById('g_signin_button'),
+      { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular' }
+    );
+
+    status.textContent = 'Google Sign-In inicializado. Haz clic en el boton para entrar.';
+    status.style.color = '#137333';
+  }
+
+  // ── Callback del login exitoso ─────────────────────────────────────
+  function handleCredentialResponse(response) {
+    idToken      = response.credential;
+    tokenPayload = parseJwt(idToken);
+
+    renderUserCard();
+    document.getElementById('user-card').classList.remove('hidden');
+    document.getElementById('api-card').classList.remove('hidden');
+    startExpTimer();
+  }
+
+  function renderUserCard() {
+    const p       = tokenPayload;
+    const infoEl  = document.getElementById('user-info');
+    const picture = p.picture
+      ? `<img src="${p.picture}" alt="avatar" />`
+      : `<div style="width:52px;height:52px;border-radius:50%;background:#4285f4;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">?</div>`;
+
+    infoEl.innerHTML = `
+      ${picture}
+      <div class="user-meta">
+        <strong>${escHtml(p.name || 'Sin nombre')}</strong>
+        <span>${escHtml(p.email || '')}</span>
+      </div>
+      <span class="badge badge-blue">${escHtml(p.sub || '')}</span>
+    `;
+
+    document.getElementById('token-preview').textContent = idToken;
+  }
+
+  // ── Expiración del token ───────────────────────────────────────────
+  function startExpTimer() {
+    if (expTimer) clearInterval(expTimer);
+    updateExpDisplay();
+    expTimer = setInterval(updateExpDisplay, 10000);
+  }
+
+  function updateExpDisplay() {
+    if (!tokenPayload) return;
+    const now  = Math.floor(Date.now() / 1000);
+    const diff = tokenPayload.exp - now;
+    const el   = document.getElementById('token-exp');
+    if (diff <= 0) {
+      el.textContent = 'Token expirado. Vuelve a iniciar sesion.';
+      el.className = 'token-exp expired';
+    } else {
+      const min = Math.floor(diff / 60);
+      const sec = diff % 60;
+      el.textContent = `Token valido por ${min}m ${sec}s`;
+      el.className = 'token-exp';
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────
+  function logout() {
+    if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
+    idToken      = null;
+    tokenPayload = null;
+    if (expTimer) clearInterval(expTimer);
+    document.getElementById('user-card').classList.add('hidden');
+    document.getElementById('api-card').classList.add('hidden');
+    document.getElementById('response-card').classList.add('hidden');
+    document.getElementById('init-status').textContent = 'Sesion cerrada.';
+  }
+
+  function clearAll() {
+    logout();
+    localStorage.removeItem('masters_client_id');
+    localStorage.removeItem('masters_backend_url');
+    document.getElementById('clientId').value = '';
+    document.getElementById('init-status').textContent = 'Sesion y configuracion limpiadas.';
+  }
+
+  function copyToken() {
+    if (!idToken) return;
+    navigator.clipboard.writeText(idToken)
+      .then(() => alert('Token copiado al portapapeles.'));
+  }
+
+  // ── Llamadas a la API ──────────────────────────────────────────────
+  async function apiCall(method, path, withToken = true) {
+    const base    = (localStorage.getItem('masters_backend_url') || 'http://localhost:8080').replace(/\/$/, '');
+    const url     = base + path;
+    const headers = { 'Accept': 'application/json' };
+    if (withToken && idToken) headers['Authorization'] = 'Bearer ' + idToken;
+
+    showResponse('...cargando', null, null);
+
+    try {
+      const t0      = Date.now();
+      const res     = await fetch(url, { method, headers });
+      const elapsed = Date.now() - t0;
+      let body;
+      try { body = await res.json(); } catch { body = await res.text(); }
+      const tokenNote = withToken && idToken ? ' (con token)' : ' (sin token)';
+      showResponse(body, `${method} ${path}${tokenNote} → ${res.status} ${res.statusText} (${elapsed}ms)`, res.ok);
+    } catch (e) {
+      showResponse(
+        { error: e.message, hint: 'Verifica que el backend esta corriendo y que CORS este configurado correctamente.' },
+        `${method} ${path} → Error de red`,
+        false
+      );
+    }
+  }
+
+  async function uploadFile() {
+    const fileInput = document.getElementById('upload-file');
+    if (!fileInput.files.length) { alert('Selecciona un archivo primero.'); return; }
+    if (!idToken) { alert('Debes autenticarte antes de subir archivos.'); return; }
+
+    const base     = (localStorage.getItem('masters_backend_url') || 'http://localhost:8080').replace(/\/$/, '');
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    showResponse('...subiendo', null, null);
+
+    try {
+      const t0  = Date.now();
+      const res = await fetch(base + '/api/v1/files', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + idToken },
+        body: formData,
+      });
+      const elapsed = Date.now() - t0;
+      let body;
+      try { body = await res.json(); } catch { body = await res.text(); }
+      showResponse(body, `POST /api/v1/files → ${res.status} ${res.statusText} (${elapsed}ms)`, res.ok);
+    } catch (e) {
+      showResponse({ error: e.message }, 'POST /api/v1/files → Error de red', false);
+    }
+  }
+
+  function showResponse(data, meta, ok) {
+    const card   = document.getElementById('response-card');
+    const box    = document.getElementById('response-box');
+    const metaEl = document.getElementById('response-meta');
+    card.classList.remove('hidden');
+    if (meta) metaEl.textContent = meta;
+    box.className = 'response-box' + (ok === true ? ' ok' : ok === false ? ' err' : '');
+    box.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Utilidades ────────────────────────────────────────────────────
+  function parseJwt(token) {
+    try {
+      return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    } catch { return {}; }
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
