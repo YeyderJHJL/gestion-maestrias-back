@@ -4,7 +4,8 @@ FROM eclipse-temurin:25-jdk-noble
 WORKDIR /app
 
 RUN mkdir -p /app/build /home/gradle/.gradle \
-    && chown -R 1000:1000 /app /home/gradle
+    && chown -R 1000:1000 /app /home/gradle \
+    && apt-get update -qq && apt-get install -y --no-install-recommends dos2unix && rm -rf /var/lib/apt/lists/*
 
 ENV SPRING_PROFILES_ACTIVE=dev
 ENV ENABLE_DEBUG=true
@@ -16,4 +17,4 @@ ENV GCS_BUCKET=masters-dev
 
 EXPOSE 8080 5005 35729
 
-CMD ["sh", "-c", "./gradlew classes -x test -q && ./gradlew classes --continuous -x test -q & ./gradlew bootRun"]
+CMD ["sh", "-c", "dos2unix gradlew && chmod +x gradlew && ./gradlew classes -x test -q && ./gradlew classes --continuous -x test -q & ./gradlew bootRun"]
