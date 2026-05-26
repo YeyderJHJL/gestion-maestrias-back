@@ -32,7 +32,7 @@ public void delete(@PathVariable UUID id) { ... }
 
 // Todos los roles autenticados
 @GetMapping("/{id}")
-@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.COORDINATOR})
 @Operation(summary = "Get a course by id")
 public ApiResponse<CourseResponse> findById(@PathVariable UUID id) { ... }
 ```
@@ -80,9 +80,10 @@ En dev (`SPRING_PROFILES_ACTIVE=dev`) el aspecto está desactivado — el `Secur
 
 ```java
 public enum UserRole {
-    ADMIN,    // Administrador — acceso completo
-    TEACHER,  // Docente
-    STUDENT   // Estudiante
+    ADMIN,       // Administrador — acceso completo
+    TEACHER,     // Docente
+    STUDENT,     // Estudiante
+    COORDINATOR  // Coordinador de programa
 }
 ```
 
@@ -92,6 +93,7 @@ El `RolesEnforcementAspect` busca authorities con el prefijo `ROLE_`:
 - `ROLE_ADMIN`
 - `ROLE_TEACHER`
 - `ROLE_STUDENT`
+- `ROLE_COORDINATOR`
 
 El `SecurityConfig` de producción (a implementar) debe convertir el claim `role` del JWT de Google en estas authorities usando un `JwtAuthenticationConverter`.
 

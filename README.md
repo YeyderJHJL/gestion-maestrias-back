@@ -217,6 +217,7 @@ Para crear otros usuarios (docentes, estudiantes): usar la API con un token de a
 | `ADMIN` | Acceso completo |
 | `TEACHER` | Operaciones propias de docente |
 | `STUDENT` | Operaciones propias de estudiante |
+| `COORDINATOR` | Operaciones propias de coordinador de programa |
 
 Los endpoints se protegen con:
 - `@Authorize(roles = {...})` → acceso para roles indicados

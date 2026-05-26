@@ -6,7 +6,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum UserRole implements LabeledEnum {
 	ADMIN("Administrador"),
 	TEACHER("Docente"),
-	STUDENT("Estudiante");
+	STUDENT("Estudiante"),
+	COORDINATOR("Coordinador");
 
 	private final String label;
 

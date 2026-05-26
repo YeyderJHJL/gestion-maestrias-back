@@ -15,7 +15,7 @@
 -- 1. TIPOS ENUM
 -- =============================================================================
 
-CREATE TYPE user_role         AS ENUM ('ADMIN', 'TEACHER', 'STUDENT');
+CREATE TYPE user_role         AS ENUM ('ADMIN', 'TEACHER', 'STUDENT', 'COORDINATOR');
 CREATE TYPE teacher_category  AS ENUM ('PRINCIPAL', 'ASSOCIATE', 'AUXILIARY');
 CREATE TYPE teacher_type      AS ENUM ('INTERNAL', 'EXTERNAL');
 CREATE TYPE academic_degree   AS ENUM ('MASTER', 'DOCTOR');
