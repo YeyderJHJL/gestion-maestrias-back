@@ -39,7 +39,7 @@ CREATE TYPE notification_type AS ENUM (
 -- first_name, last_name y dni centralizados aquí (no en teachers/students)
 CREATE TABLE users (
     id          UUID         PRIMARY KEY,
-    google_sub  VARCHAR(255) NOT NULL,
+    google_sub  VARCHAR(255),
     email       VARCHAR(255) NOT NULL,
     first_name  VARCHAR(100) NOT NULL,
     last_name   VARCHAR(100) NOT NULL,

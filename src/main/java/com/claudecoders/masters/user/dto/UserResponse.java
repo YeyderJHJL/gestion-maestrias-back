@@ -8,7 +8,6 @@ import java.util.UUID;
 @Schema(description = "User response")
 public record UserResponse(
 		UUID id,
-		String googleSub,
 		String email,
 		String firstName,
 		String lastName,

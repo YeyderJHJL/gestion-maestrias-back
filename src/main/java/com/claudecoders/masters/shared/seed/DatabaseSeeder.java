@@ -64,8 +64,6 @@ public class DatabaseSeeder implements CommandLineRunner {
 		}
 		User admin = new User();
 		admin.setEmail(adminEmail);
-		// google_sub will be overwritten on the admin's first OAuth login
-		admin.setGoogleSub("pending-" + adminEmail);
 		admin.setFirstName("Admin");
 		admin.setLastName("Sistema");
 		admin.setRole(UserRole.ADMIN);

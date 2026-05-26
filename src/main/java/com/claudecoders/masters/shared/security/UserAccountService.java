@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Resolves a Google JWT subject to an AppUserPrincipal.
  * Results are cached by googleSub (5-min TTL) to avoid a DB round-trip on every request.
- * First-login: links the real googleSub to an existing user found by email (pending-* placeholder).
+ * First-login: links the real googleSub to an existing user found by email (googleSub null = never logged in).
  */
 @Service
 public class UserAccountService {
@@ -41,13 +41,12 @@ public class UserAccountService {
 	public void evictUser(String googleSub) {}
 
 	private User linkGoogleSub(User user, String googleSub, String givenName, String familyName) {
-		boolean wasPlaceholder = user.getGoogleSub() == null
-				|| user.getGoogleSub().startsWith("pending-");
-		user.setGoogleSub(googleSub);
-		if (wasPlaceholder) {
-			if (givenName != null && !givenName.isBlank()) user.setFirstName(givenName);
-			if (familyName != null && !familyName.isBlank()) user.setLastName(familyName);
+		if (user.getGoogleSub() != null) {
+			throw new InvalidBearerTokenException("Account already linked to a different Google account");
 		}
+		user.setGoogleSub(googleSub);
+		if (givenName != null && !givenName.isBlank()) user.setFirstName(givenName);
+		if (familyName != null && !familyName.isBlank()) user.setLastName(familyName);
 		return userRepository.save(user);
 	}
 }
