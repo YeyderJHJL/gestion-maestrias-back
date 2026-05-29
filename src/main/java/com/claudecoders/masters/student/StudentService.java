@@ -63,13 +63,6 @@ public class StudentService {
 	}
 
 	@Transactional(readOnly = true)
-	public StudentResponse findByUserId(UUID userId) {
-		return studentRepository.findByUser_Id(userId)
-				.map(this::toResponse)
-				.orElseThrow(() -> new ResourceNotFoundException("Student for user", userId));
-	}
-
-	@Transactional(readOnly = true)
 	public Student getReference(UUID id) {
 		return findEntity(id);
 	}

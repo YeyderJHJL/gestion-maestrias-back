@@ -1,9 +1,6 @@
 package com.claudecoders.masters.student;
 
-import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.ApiResponse;
-import com.claudecoders.masters.shared.security.Authorize;
-import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.student.dto.StudentRequest;
 import com.claudecoders.masters.student.dto.StudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,13 +28,6 @@ public class StudentController {
 
 	public StudentController(StudentService studentService) {
 		this.studentService = studentService;
-	}
-
-	@Operation(summary = "Get current authenticated student profile")
-	@GetMapping("/me")
-	@Authorize(roles = { UserRole.STUDENT })
-	public ApiResponse<StudentResponse> me() {
-		return ApiResponse.ok(studentService.findByUserId(SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "List students")
