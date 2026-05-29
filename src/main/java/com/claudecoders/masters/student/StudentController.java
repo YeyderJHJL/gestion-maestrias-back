@@ -35,24 +35,31 @@ public class StudentController {
 
 	@Operation(summary = "Get current authenticated student profile")
 	@GetMapping("/me")
-	@Authorize(roles = { UserRole.STUDENT })
+	@Authorize(roles = { UserRole.STUDENT },
+		description = "Get current authenticated student profile (only STUDENT can access)")
 	public ApiResponse<StudentResponse> me() {
 		return ApiResponse.ok(studentService.findByUserId(SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "List students")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+		description = "List all students (only ADMIN and COORDINATOR can access)")
 	@GetMapping
 	public ApiResponse<List<StudentResponse>> findAll() {
 		return ApiResponse.ok(studentService.findAll());
 	}
 
 	@Operation(summary = "Get student by id")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER},
+		description = "Get student by id (only ADMIN, COORDINATOR and TEACHER can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<StudentResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(studentService.findById(id));
 	}
 
 	@Operation(summary = "Create student")
+	@Authorize(roles = {UserRole.ADMIN},
+		description = "Create new student (only ADMIN can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<StudentResponse>> create(@Valid @RequestBody StudentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -60,12 +67,16 @@ public class StudentController {
 	}
 
 	@Operation(summary = "Update student")
+	@Authorize(roles = {UserRole.ADMIN},
+		description = "Update student (only ADMIN can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<StudentResponse> update(@PathVariable UUID id, @Valid @RequestBody StudentRequest request) {
 		return ApiResponse.ok(studentService.update(id, request), "Student updated");
 	}
 
 	@Operation(summary = "Delete student")
+	@Authorize(roles = {UserRole.ADMIN},
+		description = "Delete student (only ADMIN can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable UUID id) {
 		studentService.delete(id);
