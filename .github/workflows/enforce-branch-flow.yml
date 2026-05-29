@@ -1,0 +1,44 @@
+name: Enforce branch flow
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-branch-flow:
+    name: Validate source and target branches
+    runs-on: ubuntu-latest
+
+    env:
+      HEAD_BRANCH: ${{ github.head_ref }}
+      BASE_BRANCH: ${{ github.base_ref }}
+
+    steps:
+      - name: Validate branch rules
+        shell: bash
+        run: |
+          if [[ "$BASE_BRANCH" == "main" && "$HEAD_BRANCH" == "develop" ]]; then
+            echo "Valid PR: develop -> main"
+            exit 0
+          fi
+
+          if [[ "$BASE_BRANCH" == "develop" && "$HEAD_BRANCH" == feature/* ]]; then
+            echo "Valid PR: feature/* -> develop"
+            exit 0
+          fi
+
+          if [[ "$BASE_BRANCH" == "main" ]]; then
+            echo "::error title=Invalid branch flow::Only PRs from develop to main are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
+            exit 1
+          fi
+
+          if [[ "$BASE_BRANCH" == "develop" ]]; then
+            echo "::error title=Invalid branch flow::Only PRs from feature/* to develop are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
+            exit 1
+          fi
+
+          echo "::error title=Invalid branch flow::Only PRs targeting develop or main are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
+          exit 1
