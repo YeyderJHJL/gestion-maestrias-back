@@ -3,6 +3,8 @@ package com.claudecoders.masters.assignment;
 import com.claudecoders.masters.assignment.dto.AssignmentRequest;
 import com.claudecoders.masters.assignment.dto.AssignmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.security.Authorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,12 +33,16 @@ public class AssignmentController {
 	}
 
 	@Operation(summary = "List assignments")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR}, 
+		description = "List all assignments (only ADMIN and COORDINATOR can access)")
 	@GetMapping
 	public ApiResponse<List<AssignmentResponse>> findAll() {
 		return ApiResponse.ok(assignmentService.findAll());
 	}
 
 	@Operation(summary = "Get assignment by course and teacher")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
+		description = "Get assignment by course and teacher (only ADMIN and COORDINATOR can access)")
 	@GetMapping("/courses/{courseId}/teachers/{teacherId}")
 	public ApiResponse<AssignmentResponse> findById(
 			@PathVariable UUID courseId,
@@ -46,6 +52,8 @@ public class AssignmentController {
 	}
 
 	@Operation(summary = "Create assignment")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Create a new assignment (only ADMIN can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<AssignmentResponse>> create(@Valid @RequestBody AssignmentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -53,6 +61,8 @@ public class AssignmentController {
 	}
 
 	@Operation(summary = "Update assignment")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Update assignment information (only ADMIN can access)")
 	@PutMapping("/courses/{courseId}/teachers/{teacherId}")
 	public ApiResponse<AssignmentResponse> update(
 			@PathVariable UUID courseId,
@@ -63,6 +73,8 @@ public class AssignmentController {
 	}
 
 	@Operation(summary = "Delete assignment")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Delete an assignment (only ADMIN can access)")
 	@DeleteMapping("/courses/{courseId}/teachers/{teacherId}")
 	public ApiResponse<Void> delete(@PathVariable UUID courseId, @PathVariable UUID teacherId) {
 		assignmentService.delete(courseId, teacherId);
