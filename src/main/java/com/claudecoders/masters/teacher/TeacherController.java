@@ -41,8 +41,8 @@ public class TeacherController {
 	}
 
 	@Operation(summary = "Get teacher by id")
-	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER },
-		description = "Get teacher by id (only ADMIN, COORDINATOR and TEACHER can access)")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT },
+		description = "Get teacher by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<TeacherResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(teacherService.findById(id));
