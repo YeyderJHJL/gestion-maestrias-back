@@ -3,6 +3,8 @@ package com.claudecoders.masters.enrollment;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,18 +33,24 @@ public class EnrollmentController {
 	}
 
 	@Operation(summary = "List enrollments")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT }, 
+		description = "List all enrollments (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping
 	public ApiResponse<List<EnrollmentResponse>> findAll() {
 		return ApiResponse.ok(enrollmentService.findAll());
 	}
 
 	@Operation(summary = "Get enrollment by id")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT },
+		description = "Get enrollment by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<EnrollmentResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(enrollmentService.findById(id));
 	}
 
 	@Operation(summary = "Create enrollment")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.TEACHER }, 
+		description = "Create a new enrollment (only ADMIN and TEACHER can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<EnrollmentResponse>> create(@Valid @RequestBody EnrollmentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -50,6 +58,8 @@ public class EnrollmentController {
 	}
 
 	@Operation(summary = "Update enrollment")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.TEACHER }, 
+		description = "Update enrollment information (only ADMIN and TEACHER can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<EnrollmentResponse> update(
 			@PathVariable UUID id,
@@ -59,6 +69,8 @@ public class EnrollmentController {
 	}
 
 	@Operation(summary = "Delete enrollment")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.TEACHER }, 
+		description = "Delete an enrollment (only ADMIN and TEACHER can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable UUID id) {
 		enrollmentService.delete(id);

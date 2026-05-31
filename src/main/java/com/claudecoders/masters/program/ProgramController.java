@@ -3,6 +3,8 @@ package com.claudecoders.masters.program;
 import com.claudecoders.masters.program.dto.ProgramRequest;
 import com.claudecoders.masters.program.dto.ProgramResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,18 +32,24 @@ public class ProgramController {
 	}
 
 	@Operation(summary = "List programs")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR }, 
+		description = "List all programs (only ADMIN and COORDINATOR can access)")
 	@GetMapping
 	public ApiResponse<List<ProgramResponse>> findAll() {
 		return ApiResponse.ok(programService.findAll());
 	}
 
 	@Operation(summary = "Get program by id")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
+		description = "Get program by id (only ADMIN and COORDINATOR can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<ProgramResponse> findById(@PathVariable Integer id) {
 		return ApiResponse.ok(programService.findById(id));
 	}
 
 	@Operation(summary = "Create program")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Create a new program (only ADMIN can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<ProgramResponse>> create(@Valid @RequestBody ProgramRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -49,12 +57,16 @@ public class ProgramController {
 	}
 
 	@Operation(summary = "Update program")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Update a program (only ADMIN can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<ProgramResponse> update(@PathVariable Integer id, @Valid @RequestBody ProgramRequest request) {
 		return ApiResponse.ok(programService.update(id, request), "Program updated");
 	}
 
 	@Operation(summary = "Delete program")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Delete a program (only ADMIN can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable Integer id) {
 		programService.delete(id);

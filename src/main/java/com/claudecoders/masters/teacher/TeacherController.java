@@ -3,6 +3,8 @@ package com.claudecoders.masters.teacher;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,18 +33,24 @@ public class TeacherController {
 	}
 
 	@Operation(summary = "List teachers")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR }, 
+		description = "List all teachers (only ADMIN and COORDINATOR can access)")
 	@GetMapping
 	public ApiResponse<List<TeacherResponse>> findAll() {
 		return ApiResponse.ok(teacherService.findAll());
 	}
 
 	@Operation(summary = "Get teacher by id")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT },
+		description = "Get teacher by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<TeacherResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(teacherService.findById(id));
 	}
 
 	@Operation(summary = "Create teacher")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Create a new teacher (only ADMIN can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<TeacherResponse>> create(@Valid @RequestBody TeacherRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -50,12 +58,16 @@ public class TeacherController {
 	}
 
 	@Operation(summary = "Update teacher")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Update teacher information (only ADMIN can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<TeacherResponse> update(@PathVariable UUID id, @Valid @RequestBody TeacherRequest request) {
 		return ApiResponse.ok(teacherService.update(id, request), "Teacher updated");
 	}
 
 	@Operation(summary = "Delete teacher")
+	@Authorize(roles = { UserRole.ADMIN }, 
+		description = "Delete a teacher (only ADMIN can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable UUID id) {
 		teacherService.delete(id);
