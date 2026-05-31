@@ -1,0 +1,29 @@
+name: Mirror Backend to GitLab
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Push main and tags to GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/pisw2026-mestria/gestion-maestrias-back.git
+          git push gitlab HEAD:main --force
+          git push gitlab --tags --force
