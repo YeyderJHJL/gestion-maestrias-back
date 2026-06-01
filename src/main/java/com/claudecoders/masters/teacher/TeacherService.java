@@ -2,6 +2,7 @@ package com.claudecoders.masters.teacher;
 
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
+import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
 import com.claudecoders.masters.user.User;
@@ -31,8 +32,28 @@ public class TeacherService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<TeacherResponse> search(
+			TeacherCategory category,
+			TeacherType type,
+			AcademicDegree academicDegree,
+			String search
+	) {
+		String normalized = (search == null || search.isBlank()) ? null : search.trim();
+		return teacherRepository.search(category, type, academicDegree, normalized).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public TeacherResponse findById(UUID id) {
 		return toResponse(findEntity(id));
+	}
+
+	@Transactional(readOnly = true)
+	public TeacherResponse findByUserId(UUID userId) {
+		return teacherRepository.findByUser_Id(userId)
+				.map(this::toResponse)
+				.orElseThrow(() -> new ResourceNotFoundException("Teacher for user", userId));
 	}
 
 	@Transactional
@@ -46,6 +67,13 @@ public class TeacherService {
 	public TeacherResponse update(UUID id, TeacherRequest request) {
 		Teacher teacher = findEntity(id);
 		applyRequest(teacher, request);
+		return toResponse(teacherRepository.save(teacher));
+	}
+
+	@Transactional
+	public TeacherResponse patch(UUID id, TeacherPatchRequest request) {
+		Teacher teacher = findEntity(id);
+		applyPatch(teacher, request);
 		return toResponse(teacherRepository.save(teacher));
 	}
 
@@ -76,6 +104,27 @@ public class TeacherService {
 		teacher.setSpecialty(request.specialty());
 		teacher.setType(request.type());
 		teacher.setPhone(request.phone());
+	}
+
+	private void applyPatch(Teacher teacher, TeacherPatchRequest request) {
+		if (request.category() != null) {
+			teacher.setCategory(request.category());
+		}
+		if (request.regime() != null) {
+			teacher.setRegime(request.regime());
+		}
+		if (request.academicDegree() != null) {
+			teacher.setAcademicDegree(request.academicDegree());
+		}
+		if (request.specialty() != null) {
+			teacher.setSpecialty(request.specialty());
+		}
+		if (request.type() != null) {
+			teacher.setType(request.type());
+		}
+		if (request.phone() != null) {
+			teacher.setPhone(request.phone());
+		}
 	}
 
 	private TeacherResponse toResponse(Teacher teacher) {
