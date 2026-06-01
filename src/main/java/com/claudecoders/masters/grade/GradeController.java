@@ -3,6 +3,8 @@ package com.claudecoders.masters.grade;
 import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,18 +33,24 @@ public class GradeController {
 	}
 
 	@Operation(summary = "List grades")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
+		description = "List all grades (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping
 	public ApiResponse<List<GradeResponse>> findAll() {
 		return ApiResponse.ok(gradeService.findAll());
 	}
 
 	@Operation(summary = "Get grade by id")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
+		description = "Get grade by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<GradeResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(gradeService.findById(id));
 	}
 
 	@Operation(summary = "Create grade")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER},
+		description = "Create a grade (only ADMIN and TEACHER can access)")
 	@PostMapping
 	public ResponseEntity<ApiResponse<GradeResponse>> create(@Valid @RequestBody GradeRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -50,12 +58,16 @@ public class GradeController {
 	}
 
 	@Operation(summary = "Update grade")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER},
+		description = "Update a grade (only ADMIN and TEACHER can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<GradeResponse> update(@PathVariable UUID id, @Valid @RequestBody GradeRequest request) {
 		return ApiResponse.ok(gradeService.update(id, request), "Grade updated");
 	}
 
 	@Operation(summary = "Delete grade")
+	@Authorize(roles = {UserRole.ADMIN},
+		description = "Delete a grade (only ADMIN can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable UUID id) {
 		gradeService.delete(id);

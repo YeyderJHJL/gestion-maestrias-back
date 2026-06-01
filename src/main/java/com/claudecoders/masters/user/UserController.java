@@ -4,8 +4,13 @@ import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
+import com.claudecoders.masters.student.StudentService;
+import com.claudecoders.masters.teacher.TeacherService;
 import com.claudecoders.masters.user.dto.UserRequest;
+import com.claudecoders.masters.user.dto.UserMeResponse;
 import com.claudecoders.masters.user.dto.UserResponse;
+import com.claudecoders.masters.user.dto.StudentProfileResponse;
+import com.claudecoders.masters.user.dto.TeacherProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,20 +33,76 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
 	private final UserService userService;
+	private final StudentService studentService;
+	private final TeacherService teacherService;
 
-	public UserController(UserService userService) {
+	public UserController(UserService userService, StudentService studentService, TeacherService teacherService) {
 		this.userService = userService;
+		this.studentService = studentService;
+		this.teacherService = teacherService;
 	}
 
 	@GetMapping("/me")
-	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
 			description = "Get current authenticated user profile")
 	@Operation(summary = "Get current authenticated user profile")
-	public ApiResponse<UserResponse> me() {
-		return ApiResponse.ok(userService.findById(SecurityHelper.currentUserId()));
+	public ApiResponse<UserMeResponse> me() {
+		var principal = SecurityHelper.currentPrincipal();
+		var user = userService.findById(principal.userId());
+		StudentProfileResponse studentProfile = null;
+		TeacherProfileResponse teacherProfile = null;
+
+		switch (principal.role()) {
+			case STUDENT -> {
+				var student = studentService.findByUserId(principal.userId());
+				studentProfile = new StudentProfileResponse(
+						student.id(),
+						student.promotionId(),
+						student.promotionName(),
+						student.cui(),
+						student.paymentCode(),
+						student.phone(),
+						student.createdAt(),
+						student.updatedAt()
+				);
+			}
+			case TEACHER -> {
+				var teacher = teacherService.findByUserId(principal.userId());
+				teacherProfile = new TeacherProfileResponse(
+						teacher.id(),
+						teacher.category(),
+						teacher.regime(),
+						teacher.academicDegree(),
+						teacher.specialty(),
+						teacher.type(),
+						teacher.phone(),
+						teacher.createdAt(),
+						teacher.updatedAt()
+				);
+			}
+			default -> {
+			}
+		}
+
+		var response = new UserMeResponse(
+				user.id(),
+				user.email(),
+				user.firstName(),
+				user.lastName(),
+				user.dni(),
+				user.role(),
+				user.active(),
+				user.createdAt(),
+				user.updatedAt(),
+				studentProfile,
+				teacherProfile
+		);
+		return ApiResponse.ok(response, "Perfil de usuario obtenido correctamente");
 	}
 
 	@Operation(summary = "List users")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+			description = "List all users (only ADMIN and COORDINATOR can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Users listed")
 	@GetMapping
 	public ApiResponse<List<UserResponse>> findAll() {
@@ -49,6 +110,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Get user by id")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+			description = "Get user by id (only ADMIN and COORDINATOR can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@GetMapping("/{id}")
@@ -57,6 +120,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Create user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Create new user (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User created")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
 	@PostMapping
@@ -66,6 +131,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Update user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Update existing user (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User updated")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@PutMapping("/{id}")
@@ -74,6 +141,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Delete user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Delete user by id (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User deleted")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@DeleteMapping("/{id}")

@@ -7,6 +7,8 @@ import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
+import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,14 +38,6 @@ public class TeacherController {
 		this.teacherService = teacherService;
 	}
 
-	@Operation(summary = "Get current authenticated teacher profile")
-	@GetMapping("/me")
-	@Authorize(roles = {UserRole.TEACHER},
-			description = "Get current authenticated teacher profile (only TEACHER can access)")
-	public ApiResponse<TeacherResponse> me() {
-		return ApiResponse.ok(teacherService.findByUserId(SecurityHelper.currentUserId()));
-	}
-
 	@Operation(summary = "List teachers with optional filters")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
 			description = "List teachers; supports filtering by category, type, academic degree and free-text search")
@@ -61,8 +55,8 @@ public class TeacherController {
 	}
 
 	@Operation(summary = "Get teacher by id")
-	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER},
-			description = "Get teacher by id (ADMIN, COORDINATOR and TEACHER can access)")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT },
+		description = "Get teacher by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<TeacherResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(teacherService.findById(id));
