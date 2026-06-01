@@ -34,15 +34,16 @@ public class StoredFileController {
 	}
 
 	@GetMapping
-	@Authorize(roles = {UserRole.ADMIN}, description = "List all stored files with metadata (no signed URLs)")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
+		description = "List all stored files (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@Operation(summary = "List all stored files")
 	public ApiResponse<List<StoredFileResponse>> findAll() {
 		return ApiResponse.ok(fileService.findAll());
 	}
 
 	@GetMapping("/{id}")
-	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
-			description = "Get file metadata and signed download URL")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
+		description = "Get file metadata and signed download URL (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@Operation(summary = "Get file metadata and signed download URL")
 	public ApiResponse<StoredFileResponse> findById(@PathVariable UUID id) {
 		return ApiResponse.ok(fileService.findById(id));
@@ -51,7 +52,7 @@ public class StoredFileController {
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT},
-			description = "Upload a file to GCS")
+		description = "Upload a file (only ADMIN, TEACHER and STUDENT can access)")
 	@Operation(summary = "Upload a file — requires authentication")
 	public ApiResponse<StoredFileResponse> upload(@RequestParam MultipartFile file) throws IOException {
 		return ApiResponse.ok(
@@ -62,7 +63,8 @@ public class StoredFileController {
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@Authorize(roles = {UserRole.ADMIN}, description = "Delete a file from GCS and the database")
+	@Authorize(roles = {UserRole.ADMIN}, 
+		description = "Delete a stored file (only ADMIN can access)")
 	@Operation(summary = "Delete a stored file")
 	public void delete(@PathVariable UUID id) {
 		fileService.delete(id);

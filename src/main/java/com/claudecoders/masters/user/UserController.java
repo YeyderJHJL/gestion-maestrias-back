@@ -43,7 +43,7 @@ public class UserController {
 	}
 
 	@GetMapping("/me")
-	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.COORDINATOR},
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
 			description = "Get current authenticated user profile")
 	@Operation(summary = "Get current authenticated user profile")
 	public ApiResponse<UserMeResponse> me() {
@@ -101,6 +101,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "List users")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+			description = "List all users (only ADMIN and COORDINATOR can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Users listed")
 	@GetMapping
 	public ApiResponse<List<UserResponse>> findAll() {
@@ -108,6 +110,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Get user by id")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+			description = "Get user by id (only ADMIN and COORDINATOR can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@GetMapping("/{id}")
@@ -116,6 +120,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Create user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Create new user (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User created")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
 	@PostMapping
@@ -125,6 +131,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Update user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Update existing user (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User updated")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@PutMapping("/{id}")
@@ -133,6 +141,8 @@ public class UserController {
 	}
 
 	@Operation(summary = "Delete user")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Delete user by id (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User deleted")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@DeleteMapping("/{id}")
