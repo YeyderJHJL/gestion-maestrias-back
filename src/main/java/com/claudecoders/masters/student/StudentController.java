@@ -30,14 +30,6 @@ public class StudentController {
 		this.studentService = studentService;
 	}
 
-	@Operation(summary = "Get current authenticated student profile")
-	@GetMapping("/me")
-	@Authorize(roles = { UserRole.STUDENT },
-		description = "Get current authenticated student profile (only STUDENT can access)")
-	public ApiResponse<StudentResponse> me() {
-		return ApiResponse.ok(studentService.findByUserId(SecurityHelper.currentUserId()));
-	}
-
 	@Operation(summary = "List students")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
 		description = "List all students (only ADMIN and COORDINATOR can access)")
