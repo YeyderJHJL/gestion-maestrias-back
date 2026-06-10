@@ -50,6 +50,7 @@ server:
 app:
   gcs:
     bucket: ${GCS_BUCKET:masters-dev}
+    url-expiration-minutes: ${GCS_URL_EXPIRATION_MINUTES:15}
   seed:
     admin-email: ${ADMIN_EMAIL:}
   cors:

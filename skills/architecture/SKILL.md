@@ -229,6 +229,26 @@ public record CourseResponse(
 - Un DTO por dirección. No reutilizar el request como response.
 - Mapping manual en el service (método `toResponse`).
 
+## Archivos en módulos de dominio
+
+Los módulos de negocio no almacenan URLs de GCS. Guardan una relación a `StoredFile` por FK y los requests reciben el UUID del archivo subido:
+
+```java
+public record CourseRequest(
+    // ...otros campos...
+    UUID syllabusFileId
+) {}
+
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "id_syllabus_file")
+private StoredFile syllabusFile;
+```
+
+- Subir primero con `POST /files` y usar el `id` devuelto.
+- Para responses de dominio, devolver metadata resumida del archivo, no `downloadUrl`.
+- Para descargar, el cliente llama `GET /files/{id}` y usa el `downloadUrl` temporal que genera `GcsStorageService`.
+- Convenciones actuales: `courses.id_syllabus_file`, `enrollments.id_resolution_file`, `vouchers.id_file`.
+
 ## Enum con label en español
 
 ```java
@@ -265,3 +285,4 @@ El nombre Java del enum (`REGULAR`) debe coincidir con el valor del ENUM de Post
 - `LocalDateTime` para campos de auditoría — usar `Instant`.
 - `ddl-auto: update` o `create` — el schema lo maneja el SQL.
 - `open-in-view: true`.
+- Guardar URLs de GCS en tablas de dominio — usar FK a `stored_files.id`.

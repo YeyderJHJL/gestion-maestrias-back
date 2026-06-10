@@ -1,6 +1,7 @@
 package com.claudecoders.masters.file;
 
 import com.claudecoders.masters.file.dto.StoredFileResponse;
+import com.claudecoders.masters.file.dto.StoredFileSummaryResponse;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.shared.storage.GcsStorageService;
 import com.claudecoders.masters.user.User;
@@ -40,6 +41,24 @@ public class StoredFileService {
 	@Transactional(readOnly = true)
 	public StoredFileResponse findById(UUID id) {
 		return toResponse(getOrThrow(id));
+	}
+
+	@Transactional(readOnly = true)
+	public StoredFile getReference(UUID id) {
+		return getOrThrow(id);
+	}
+
+	public StoredFileSummaryResponse toSummary(StoredFile file) {
+		if (file == null) {
+			return null;
+		}
+		return new StoredFileSummaryResponse(
+				file.getId(),
+				file.getOriginalName(),
+				file.getContentType(),
+				file.getSizeBytes(),
+				file.getCreatedAt()
+		);
 	}
 
 	/**

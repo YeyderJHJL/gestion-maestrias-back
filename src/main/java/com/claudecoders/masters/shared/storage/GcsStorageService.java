@@ -21,6 +21,9 @@ public class GcsStorageService {
 	@Value("${app.gcs.bucket}")
 	private String bucket;
 
+	@Value("${app.gcs.url-expiration-minutes:15}")
+	private long urlExpirationMinutes;
+
 	// Set in Dockerfile.dev; absent in prod — used to detect emulator mode
 	@Value("${STORAGE_EMULATOR_HOST:}")
 	private String emulatorHost;
@@ -39,7 +42,7 @@ public class GcsStorageService {
 
 	/**
 	 * In dev (emulator), returns a direct download URL accessible from the browser via localhost.
-	 * In prod, generates a signed URL valid for 15 minutes.
+	 * In prod, generates a signed URL valid for the configured expiration time.
 	 */
 	public String signedDownloadUrl(String objectKey) {
 		if (!emulatorHost.isBlank()) {
@@ -49,7 +52,7 @@ public class GcsStorageService {
 					.formatted(browserHost, bucket, encodedKey);
 		}
 		BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucket, objectKey)).build();
-		URL url = storage.signUrl(blobInfo, 15, TimeUnit.MINUTES, SignUrlOption.withV4Signature());
+		URL url = storage.signUrl(blobInfo, urlExpirationMinutes, TimeUnit.MINUTES, SignUrlOption.withV4Signature());
 		return url.toString();
 	}
 

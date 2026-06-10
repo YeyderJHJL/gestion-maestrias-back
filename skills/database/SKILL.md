@@ -111,7 +111,8 @@ CREATE TABLE stored_files (
 - `stored_files.id` se genera en Java con `@UuidGenerator(style = Style.VERSION_7)`, no con `DEFAULT gen_random_uuid()`.
 - Nunca almacenar la URL firmada en la BD — se genera on-demand en `GcsStorageService.signedDownloadUrl()`.
 - Convención de `object_key`: `files/{año}/{uuid}.{ext}`, e.g. `files/2026/0192f8c1-....pdf`.
-- Para código nuevo, preferir referencias a `stored_files.id` en vez de paths propios. Las columnas existentes `vouchers.file_url`, `courses.syllabus_url` y `enrollments.resolution_url` siguen siendo `TEXT` hasta que una migración explícita las cambie.
+- Las tablas de dominio referencian `stored_files.id`; no guardan URLs ni paths propios. Convenciones actuales: `courses.id_syllabus_file`, `enrollments.id_resolution_file`, `vouchers.id_file`.
+- En respuestas de dominio, devolver metadata resumida del archivo. Para descarga, el cliente debe llamar `GET /api/v1/files/{id}` y usar el `downloadUrl` temporal.
 
 ## Columnas estándar
 
@@ -151,7 +152,7 @@ Usar `repository.getReferenceById(...)` solo en código interno donde se acepte 
 ## Anti-patrones
 
 - `@Enumerated(EnumType.ORDINAL)` — frágil ante reordenamientos del enum.
-- Almacenar URLs firmadas de GCS en la BD — expiran y contaminan columnas.
+- Almacenar URLs firmadas de GCS en la BD — expiran y contaminan columnas. Guardar `stored_files.id`.
 - Hard-delete en tablas con `deleted_at`.
 - Agregar `WHERE deleted_at IS NULL` manualmente en JPQL — `@SQLRestriction` ya lo hace.
 - `@UniqueConstraint` estándar en tablas con soft delete — usar índice parcial en SQL.

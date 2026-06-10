@@ -4,6 +4,11 @@
       "name": "app.gcs.bucket",
       "type": "java.lang.String",
       "description": "Google Cloud Storage bucket used by the application."
+    },
+    {
+      "name": "app.gcs.url-expiration-minutes",
+      "type": "java.lang.Long",
+      "description": "Expiration time in minutes for signed Google Cloud Storage download URLs."
     }
   ]
 }
