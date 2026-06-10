@@ -20,6 +20,7 @@ public record TeacherBulkRequest(
 		AcademicDegree academicDegree,
 		@Size(max = 255) String specialty,
 		@Size(max = 100) String regime,
-		@Size(max = 20) String phone
+		@Size(max = 20) String phone,
+		@Size(max = 255) String university
 ) {
 }

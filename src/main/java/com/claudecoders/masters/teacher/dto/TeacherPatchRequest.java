@@ -13,6 +13,7 @@ public record TeacherPatchRequest(
 		AcademicDegree academicDegree,
 		@Size(max = 255) String specialty,
 		TeacherType type,
-		@Size(max = 20) String phone
+		@Size(max = 20) String phone,
+		@Size(max = 255) String university
 ) {
 }

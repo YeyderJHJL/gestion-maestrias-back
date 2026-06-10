@@ -7,6 +7,7 @@ import com.claudecoders.masters.teacher.dto.TeacherBulkRequest;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
+import com.claudecoders.masters.teacher.dto.TeacherImportResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -75,11 +76,11 @@ public class TeacherController {
 	@Authorize(roles = {UserRole.ADMIN},
 			description = "Create users with TEACHER role and their teacher profiles in bulk (only ADMIN can access)")
 	@PostMapping("/bulk")
-	public ResponseEntity<ApiResponse<List<TeacherResponse>>> createBulk(
-			@Valid @Size(min = 1) @RequestBody List<@NotNull @Valid TeacherBulkRequest> requests
+	public ResponseEntity<ApiResponse<TeacherImportResult>> createBulk(
+    @Valid @Size(min = 1) @RequestBody List<@NotNull @Valid TeacherBulkRequest> requests
 	) {
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponse.ok(teacherService.createBulk(requests), "Docentes creados correctamente"));
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.ok(teacherService.createBulk(requests), "Importación completada"));
 	}
 
 	@Operation(summary = "Update teacher (full replace)")

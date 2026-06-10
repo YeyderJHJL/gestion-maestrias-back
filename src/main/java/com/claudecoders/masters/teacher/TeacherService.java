@@ -5,6 +5,8 @@ import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.teacher.dto.TeacherBulkRequest;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
+import com.claudecoders.masters.teacher.dto.TeacherImportResult;
+import com.claudecoders.masters.teacher.dto.TeacherImportRowResult;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.shared.enums.UserRole;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,11 +72,53 @@ public class TeacherService {
 	}
 
 	@Transactional
-	public List<TeacherResponse> createBulk(List<TeacherBulkRequest> requests) {
-		validateBulkRequests(requests);
-		return requests.stream()
-				.map(this::createFromBulkRequest)
-				.toList();
+	public TeacherImportResult createBulk(List<TeacherBulkRequest> requests) {
+    if (requests == null || requests.isEmpty()) {
+      throw new BusinessException("Debe enviar al menos un docente");
+    }
+
+    List<TeacherImportRowResult> results = new ArrayList<>();
+    int imported = 0;
+    int rejected = 0;
+
+    Set<String> emailsInBatch = new HashSet<>();
+    Set<String> dnisInBatch = new HashSet<>();
+
+    for (int i = 0; i < requests.size(); i++) {
+      TeacherBulkRequest request = requests.get(i);
+      int row = i + 1;
+      String email = request.email() != null ? request.email().trim().toLowerCase(Locale.ROOT) : null;
+
+      try {
+        if (email == null || !emailsInBatch.add(email)) {
+          throw new BusinessException("Correo duplicado en el lote");
+        }
+
+        if (userService.existsByEmail(request.email())) {
+          throw new BusinessException("Ya existe un usuario con el correo '%s'".formatted(request.email()));
+        }
+				
+        String dni = blankToNull(request.dni());
+        if (dni != null) {
+          if (!dnisInBatch.add(dni)) {
+            throw new BusinessException("DNI duplicado en el lote");
+        	}
+          if (userService.existsByDni(dni)) {
+            throw new BusinessException("Ya existe un usuario con el DNI '%s'".formatted(dni));
+          }
+        }
+
+        TeacherResponse teacher = createFromBulkRequest(request);
+        results.add(new TeacherImportRowResult(row, "SUCCESS", request.email(), null, teacher));
+        imported++;
+
+      } catch (BusinessException ex) {
+        results.add(new TeacherImportRowResult(row, "REJECTED", request.email(), ex.getMessage(), null));
+        rejected++;
+      }
+    }
+
+    return new TeacherImportResult(imported, rejected, results);
 	}
 
 	@Transactional
@@ -116,6 +161,7 @@ public class TeacherService {
 		teacher.setAcademicDegree(request.academicDegree());
 		teacher.setSpecialty(request.specialty());
 		teacher.setType(request.type());
+		teacher.setUniversity(request.university());
 		teacher.setPhone(request.phone());
 	}
 
@@ -137,6 +183,7 @@ public class TeacherService {
 		teacher.setSpecialty(request.specialty());
 		teacher.setType(request.type());
 		teacher.setPhone(request.phone());
+		teacher.setUniversity(request.university());
 		return toResponse(teacherRepository.save(teacher));
 	}
 
@@ -189,6 +236,9 @@ public class TeacherService {
 		if (request.phone() != null) {
 			teacher.setPhone(request.phone());
 		}
+		if (request.university() != null) {
+			teacher.setUniversity(request.university());
+		}
 	}
 
 	private TeacherResponse toResponse(Teacher teacher) {
@@ -205,6 +255,7 @@ public class TeacherService {
 				teacher.getSpecialty(),
 				teacher.getType(),
 				teacher.getPhone(),
+				teacher.getUniversity(),
 				teacher.getCreatedAt(),
 				teacher.getUpdatedAt()
 		);
