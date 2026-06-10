@@ -4,6 +4,7 @@ import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.course.CourseService;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
+import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.state.State;
@@ -23,17 +24,20 @@ public class EnrollmentService {
 	private final StudentService studentService;
 	private final CourseService courseService;
 	private final StateService stateService;
+	private final StoredFileService storedFileService;
 
 	public EnrollmentService(
 			EnrollmentRepository enrollmentRepository,
 			StudentService studentService,
 			CourseService courseService,
-			StateService stateService
+			StateService stateService,
+			StoredFileService storedFileService
 	) {
 		this.enrollmentRepository = enrollmentRepository;
 		this.studentService = studentService;
 		this.courseService = courseService;
 		this.stateService = stateService;
+		this.storedFileService = storedFileService;
 	}
 
 	@Transactional(readOnly = true)
@@ -88,7 +92,7 @@ public class EnrollmentService {
 		enrollment.setCourse(course);
 		enrollment.setState(state);
 		enrollment.setEnrollmentDate(request.enrollmentDate());
-		enrollment.setResolutionUrl(request.resolutionUrl());
+		enrollment.setResolutionFile(request.resolutionFileId() == null ? null : storedFileService.getReference(request.resolutionFileId()));
 		enrollment.setObservations(request.observations());
 	}
 
@@ -109,7 +113,7 @@ public class EnrollmentService {
 				state.getCode(),
 				state.getName(),
 				enrollment.getEnrollmentDate(),
-				enrollment.getResolutionUrl(),
+				storedFileService.toSummary(enrollment.getResolutionFile()),
 				enrollment.getObservations(),
 				enrollment.getCreatedAt(),
 				enrollment.getUpdatedAt()

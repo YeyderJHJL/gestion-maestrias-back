@@ -1,5 +1,6 @@
 package com.claudecoders.masters.voucher;
 
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
@@ -38,8 +39,9 @@ public class Voucher extends BaseEntity {
 	@JoinColumn(name = "id_state", nullable = false)
 	private State state;
 
-	@Column(name = "file_url", nullable = false, columnDefinition = "TEXT")
-	private String fileUrl;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_file", nullable = false)
+	private StoredFile file;
 
 	@Column(name = "declared_amount", nullable = false, precision = 10, scale = 2)
 	private BigDecimal declaredAmount;
@@ -71,12 +73,12 @@ public class Voucher extends BaseEntity {
 		this.state = state;
 	}
 
-	public String getFileUrl() {
-		return fileUrl;
+	public StoredFile getFile() {
+		return file;
 	}
 
-	public void setFileUrl(String fileUrl) {
-		this.fileUrl = fileUrl;
+	public void setFile(StoredFile file) {
+		this.file = file;
 	}
 
 	public BigDecimal getDeclaredAmount() {
