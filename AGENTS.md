@@ -46,6 +46,7 @@ The Gradle wrapper is present, but tests and builds should run **inside Docker**
 9. **Default role = ADMIN** — every endpoint is ADMIN-only unless annotated with `@Authorize` or `@Public`. See `skills/roles/SKILL.md`.
 10. **Personal data lives in `users`** — `first_name`, `last_name`, `dni` are on the `users` table, not on `teachers` or `students`.
 11. **`SecurityHelper.currentUserId()`** — the canonical way to get the authenticated user's UUID inside controllers and services. Never inject `Authentication` directly.
+12. **File references use `stored_files.id`** — domain tables reference uploaded files by FK (`id_syllabus_file`, `id_resolution_file`, `id_file`). Never store GCS URLs in domain tables.
 
 ## Package structure (package by feature)
 

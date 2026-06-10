@@ -1,5 +1,6 @@
 package com.claudecoders.masters.course;
 
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.program.Program;
 import com.claudecoders.masters.promotion.Promotion;
 import com.claudecoders.masters.shared.audit.BaseEntity;
@@ -62,8 +63,9 @@ public class Course extends BaseEntity {
 	@Column(name = "observations", columnDefinition = "TEXT")
 	private String observations;
 
-	@Column(name = "syllabus_url", columnDefinition = "TEXT")
-	private String syllabusUrl;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_syllabus_file")
+	private StoredFile syllabusFile;
 
 	public UUID getId() {
 		return id;
@@ -137,11 +139,11 @@ public class Course extends BaseEntity {
 		this.observations = observations;
 	}
 
-	public String getSyllabusUrl() {
-		return syllabusUrl;
+	public StoredFile getSyllabusFile() {
+		return syllabusFile;
 	}
 
-	public void setSyllabusUrl(String syllabusUrl) {
-		this.syllabusUrl = syllabusUrl;
+	public void setSyllabusFile(StoredFile syllabusFile) {
+		this.syllabusFile = syllabusFile;
 	}
 }

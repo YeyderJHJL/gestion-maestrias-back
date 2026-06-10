@@ -1,6 +1,7 @@
 package com.claudecoders.masters.enrollment;
 
 import com.claudecoders.masters.course.Course;
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
@@ -46,8 +47,9 @@ public class Enrollment extends BaseEntity {
 	@Column(name = "enrollment_date", nullable = false)
 	private LocalDate enrollmentDate = LocalDate.now();
 
-	@Column(name = "resolution_url", columnDefinition = "TEXT")
-	private String resolutionUrl;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_resolution_file")
+	private StoredFile resolutionFile;
 
 	@Column(name = "observations", columnDefinition = "TEXT")
 	private String observations;
@@ -92,12 +94,12 @@ public class Enrollment extends BaseEntity {
 		this.enrollmentDate = enrollmentDate;
 	}
 
-	public String getResolutionUrl() {
-		return resolutionUrl;
+	public StoredFile getResolutionFile() {
+		return resolutionFile;
 	}
 
-	public void setResolutionUrl(String resolutionUrl) {
-		this.resolutionUrl = resolutionUrl;
+	public void setResolutionFile(StoredFile resolutionFile) {
+		this.resolutionFile = resolutionFile;
 	}
 
 	public String getObservations() {

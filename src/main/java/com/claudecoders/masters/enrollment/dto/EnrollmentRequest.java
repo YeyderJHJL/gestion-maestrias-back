@@ -11,7 +11,7 @@ public record EnrollmentRequest(
 		@NotNull UUID courseId,
 		@NotNull Integer stateId,
 		@NotNull LocalDate enrollmentDate,
-		String resolutionUrl,
+		UUID resolutionFileId,
 		String observations
 ) {
 }

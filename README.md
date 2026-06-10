@@ -164,6 +164,7 @@ docker compose -f compose.dev.yml up --build
 | `DB_POOL_MIN_IDLE` | Mínimo de conexiones ociosas | `4` |
 | `GCP_PROJECT_ID` | ID del proyecto en GCP | `masters-dev` (ignorado en dev) |
 | `GCS_BUCKET` | Bucket de GCS | `masters-dev` |
+| `GCS_URL_EXPIRATION_MINUTES` | Minutos de vigencia de URLs firmadas de descarga | `15` |
 | `GOOGLE_OAUTH_CLIENT_ID` | Client ID de Google OAuth | `xxxx.apps.googleusercontent.com` |
 | `GOOGLE_OAUTH_AUDIENCE` | Audience del JWT (= CLIENT_ID) | igual que `GOOGLE_OAUTH_CLIENT_ID` |
 | `GOOGLE_OAUTH_ISSUER_URI` | Issuer de Google | `https://accounts.google.com` |
