@@ -3,15 +3,15 @@ package com.claudecoders.masters.teacher;
 import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
-import com.claudecoders.masters.shared.security.SecurityHelper;
+import com.claudecoders.masters.teacher.dto.TeacherBulkRequest;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
-import com.claudecoders.masters.shared.security.Authorize;
-import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -69,6 +69,17 @@ public class TeacherController {
 	public ResponseEntity<ApiResponse<TeacherResponse>> create(@Valid @RequestBody TeacherRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.ok(teacherService.create(request), "Teacher created"));
+	}
+
+	@Operation(summary = "Create teachers in bulk")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Create users with TEACHER role and their teacher profiles in bulk (only ADMIN can access)")
+	@PostMapping("/bulk")
+	public ResponseEntity<ApiResponse<List<TeacherResponse>>> createBulk(
+			@Valid @Size(min = 1) @RequestBody List<@NotNull @Valid TeacherBulkRequest> requests
+	) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiResponse.ok(teacherService.createBulk(requests), "Docentes creados correctamente"));
 	}
 
 	@Operation(summary = "Update teacher (full replace)")

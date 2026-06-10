@@ -2,13 +2,18 @@ package com.claudecoders.masters.teacher;
 
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
+import com.claudecoders.masters.teacher.dto.TeacherBulkRequest;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.user.UserService;
+import com.claudecoders.masters.user.dto.UserRequest;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +69,14 @@ public class TeacherService {
 	}
 
 	@Transactional
+	public List<TeacherResponse> createBulk(List<TeacherBulkRequest> requests) {
+		validateBulkRequests(requests);
+		return requests.stream()
+				.map(this::createFromBulkRequest)
+				.toList();
+	}
+
+	@Transactional
 	public TeacherResponse update(UUID id, TeacherRequest request) {
 		Teacher teacher = findEntity(id);
 		applyRequest(teacher, request);
@@ -95,7 +108,7 @@ public class TeacherService {
 	private void applyRequest(Teacher teacher, TeacherRequest request) {
 		User user = userService.getReference(request.userId());
 		if (user.getRole() != UserRole.TEACHER) {
-			throw new BusinessException("User must have TEACHER role");
+			throw new BusinessException("El usuario debe tener rol DOCENTE");
 		}
 		teacher.setUser(user);
 		teacher.setCategory(request.category());
@@ -104,6 +117,57 @@ public class TeacherService {
 		teacher.setSpecialty(request.specialty());
 		teacher.setType(request.type());
 		teacher.setPhone(request.phone());
+	}
+
+	private TeacherResponse createFromBulkRequest(TeacherBulkRequest request) {
+		User user = userService.createEntity(new UserRequest(
+				request.email(),
+				request.firstName(),
+				request.lastName(),
+				blankToNull(request.dni()),
+				UserRole.TEACHER,
+				true
+		));
+
+		Teacher teacher = new Teacher();
+		teacher.setUser(user);
+		teacher.setCategory(request.category());
+		teacher.setRegime(request.regime());
+		teacher.setAcademicDegree(request.academicDegree());
+		teacher.setSpecialty(request.specialty());
+		teacher.setType(request.type());
+		teacher.setPhone(request.phone());
+		return toResponse(teacherRepository.save(teacher));
+	}
+
+	private void validateBulkRequests(List<TeacherBulkRequest> requests) {
+		if (requests == null || requests.isEmpty()) {
+			throw new BusinessException("Debe enviar al menos un docente");
+		}
+
+		Set<String> emails = new HashSet<>();
+		Set<String> dnis = new HashSet<>();
+		for (TeacherBulkRequest request : requests) {
+			String email = request.email().trim().toLowerCase(Locale.ROOT);
+			if (!emails.add(email)) {
+				throw new BusinessException("El correo '%s' está repetido en la carga".formatted(request.email()));
+			}
+			if (userService.existsByEmail(request.email())) {
+				throw new BusinessException("Ya existe un usuario con el correo '%s'".formatted(request.email()));
+			}
+
+			String dni = blankToNull(request.dni());
+			if (dni != null && !dnis.add(dni)) {
+				throw new BusinessException("El DNI '%s' está repetido en la carga".formatted(dni));
+			}
+			if (userService.existsByDni(dni)) {
+				throw new BusinessException("Ya existe un usuario con el DNI '%s'".formatted(dni));
+			}
+		}
+	}
+
+	private String blankToNull(String value) {
+		return value == null || value.isBlank() ? null : value.trim();
 	}
 
 	private void applyPatch(Teacher teacher, TeacherPatchRequest request) {

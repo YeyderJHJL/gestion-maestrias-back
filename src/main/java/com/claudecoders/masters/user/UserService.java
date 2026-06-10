@@ -40,6 +40,13 @@ public class UserService {
 	}
 
 	@Transactional
+	public User createEntity(UserRequest request) {
+		User user = new User();
+		applyRequest(user, request);
+		return userRepository.save(user);
+	}
+
+	@Transactional
 	public UserResponse update(UUID id, UserRequest request) {
 		User user = findEntity(id);
 		userAccountService.evictUser(user.getGoogleSub());
@@ -57,6 +64,16 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public User getReference(UUID id) {
 		return findEntity(id);
+	}
+
+	@Transactional(readOnly = true)
+	public boolean existsByEmail(String email) {
+		return userRepository.existsByEmail(email);
+	}
+
+	@Transactional(readOnly = true)
+	public boolean existsByDni(String dni) {
+		return dni != null && !dni.isBlank() && userRepository.existsByDni(dni);
 	}
 
 	private User findEntity(UUID id) {
