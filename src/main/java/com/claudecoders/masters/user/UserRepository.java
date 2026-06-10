@@ -11,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	Optional<User> findByGoogleSub(String googleSub);
 
 	boolean existsByEmail(String email);
+
+	boolean existsByDni(String dni);
 }
