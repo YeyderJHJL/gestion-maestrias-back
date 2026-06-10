@@ -72,6 +72,24 @@ public class AssignmentService {
 		assignmentRepository.delete(findEntity(courseId, teacherId));
 	}
 
+	@Transactional(readOnly = true)
+	public List<AssignmentResponse> findByCourse(UUID courseId) {
+		courseService.getReference(courseId);
+		return assignmentRepository.findByCourse_IdOrderByAssignmentDateAsc(courseId)
+					.stream()
+					.map(this::toResponse)
+					.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<AssignmentResponse> findByTeacher(UUID teacherId) {
+    teacherService.getReference(teacherId);
+    return assignmentRepository.findByTeacher_IdOrderByAssignmentDateAsc(teacherId)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+	}
+
 	private Assignment findEntity(UUID courseId, UUID teacherId) {
 		return assignmentRepository.findByCourse_IdAndTeacher_Id(courseId, teacherId)
 				.orElseThrow(() -> new ResourceNotFoundException("Assignment", "%s/%s".formatted(courseId, teacherId)));

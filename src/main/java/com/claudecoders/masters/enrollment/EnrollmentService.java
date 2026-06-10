@@ -76,6 +76,15 @@ public class EnrollmentService {
 		return findEntity(id);
 	}
 
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByCourse(UUID courseId) {
+    courseService.getReference(courseId); // valida que el curso exista
+    return enrollmentRepository.findByCourse_IdOrderByEnrollmentDateAsc(courseId)
+          .stream()
+          .map(this::toResponse)
+          .toList();
+	}
+
 	private Enrollment findEntity(UUID id) {
 		return enrollmentRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
