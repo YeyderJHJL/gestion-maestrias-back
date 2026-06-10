@@ -8,6 +8,8 @@ import com.claudecoders.masters.student.StudentService;
 import com.claudecoders.masters.teacher.TeacherService;
 import com.claudecoders.masters.user.dto.UserRequest;
 import com.claudecoders.masters.user.dto.UserMeResponse;
+import com.claudecoders.masters.user.dto.UserCreateRequest;
+import com.claudecoders.masters.user.dto.UserProfileResponse;
 import com.claudecoders.masters.user.dto.UserResponse;
 import com.claudecoders.masters.user.dto.StudentProfileResponse;
 import com.claudecoders.masters.user.dto.TeacherProfileResponse;
@@ -119,15 +121,15 @@ public class UserController {
 		return ApiResponse.ok(userService.findById(id));
 	}
 
-	@Operation(summary = "Create user")
+	@Operation(summary = "Create user with role-specific profile")
 	@Authorize(roles = {UserRole.ADMIN},
-			description = "Create new user (only ADMIN can access)")
+			description = "Create new user and teacher/student profile when applicable (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User created")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
 	@PostMapping
-	public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody UserRequest request) {
+	public ResponseEntity<ApiResponse<UserProfileResponse>> create(@Valid @RequestBody UserCreateRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponse.ok(userService.create(request), "User created"));
+				.body(ApiResponse.ok(userService.create(request), "Usuario creado correctamente"));
 	}
 
 	@Operation(summary = "Update user")
