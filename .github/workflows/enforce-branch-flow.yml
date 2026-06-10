@@ -6,10 +6,11 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   validate-branch-flow:
-    name: Validate source and target branches
+    name: Validate source, target and build
     runs-on: ubuntu-latest
 
     env:
@@ -18,27 +19,227 @@ jobs:
 
     steps:
       - name: Validate branch rules
+        id: branch-flow
         shell: bash
         run: |
+          set -euo pipefail
+
           if [[ "$BASE_BRANCH" == "main" && "$HEAD_BRANCH" == "develop" ]]; then
+            echo "valid=true" >> "$GITHUB_OUTPUT"
             echo "Valid PR: develop -> main"
             exit 0
           fi
 
           if [[ "$BASE_BRANCH" == "develop" && "$HEAD_BRANCH" == feature/* ]]; then
+            echo "valid=true" >> "$GITHUB_OUTPUT"
             echo "Valid PR: feature/* -> develop"
             exit 0
           fi
 
           if [[ "$BASE_BRANCH" == "main" ]]; then
-            echo "::error title=Invalid branch flow::Only PRs from develop to main are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
-            exit 1
+            message="Flujo de ramas invalido. Solo se permiten PRs de develop hacia main. PR actual: $HEAD_BRANCH -> $BASE_BRANCH."
+          elif [[ "$BASE_BRANCH" == "develop" ]]; then
+            message="Flujo de ramas invalido. Solo se permiten PRs de feature/* hacia develop. PR actual: $HEAD_BRANCH -> $BASE_BRANCH."
+          else
+            message="Flujo de ramas invalido. Solo se permiten PRs hacia develop o main. PR actual: $HEAD_BRANCH -> $BASE_BRANCH."
           fi
 
-          if [[ "$BASE_BRANCH" == "develop" ]]; then
-            echo "::error title=Invalid branch flow::Only PRs from feature/* to develop are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
-            exit 1
-          fi
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+          {
+            echo "message<<EOF"
+            echo "$message"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
-          echo "::error title=Invalid branch flow::Only PRs targeting develop or main are allowed. Current PR: $HEAD_BRANCH -> $BASE_BRANCH"
+          echo "::error title=Invalid branch flow::$message"
           exit 1
+
+      - name: Comment invalid branch flow
+        if: failure() && steps.branch-flow.outputs.message != ''
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          COMMENT_BODY: |
+            <!-- branch-flow-check -->
+            ### Validacion del PR
+
+            No se puede revisar este PR porque no respeta el flujo de ramas.
+
+            ${{ steps.branch-flow.outputs.message }}
+
+            Corrige la rama origen o destino y vuelve a actualizar el PR.
+        with:
+          script: |
+            const marker = '<!-- branch-flow-check -->';
+            const body = process.env.COMMENT_BODY;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Checkout PR head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check temporary merge with target branch
+        id: merge-check
+        shell: bash
+        env:
+          BASE_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags --prune "https://x-access-token:${GITHUB_TOKEN}@github.com/${BASE_REPO}.git" "$BASE_BRANCH"
+
+          if git merge --no-commit --no-ff FETCH_HEAD; then
+            echo "conflicts=false" >> "$GITHUB_OUTPUT"
+            echo "Temporary merge with $BASE_BRANCH succeeded"
+            exit 0
+          fi
+
+          conflicted_files="$(git diff --name-only --diff-filter=U || true)"
+          git merge --abort || true
+
+          {
+            echo "message<<EOF"
+            echo "Este PR tiene conflictos con $BASE_BRANCH. Resuelve los conflictos localmente y vuelve a actualizar el PR."
+            if [[ -n "$conflicted_files" ]]; then
+              echo
+              echo "Archivos en conflicto:"
+              while IFS= read -r file; do
+                if [[ -n "$file" ]]; then
+                  echo "- \`$file\`"
+                fi
+              done <<< "$conflicted_files"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::error title=Merge conflicts::Este PR tiene conflictos con $BASE_BRANCH."
+          exit 1
+
+      - name: Comment merge conflicts
+        if: failure() && steps.merge-check.outputs.message != ''
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          COMMENT_BODY: |
+            <!-- branch-flow-check -->
+            ### Validacion del PR
+
+            ${{ steps.merge-check.outputs.message }}
+        with:
+          script: |
+            const marker = '<!-- branch-flow-check -->';
+            const body = process.env.COMMENT_BODY;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Prepare Gradle wrapper
+        shell: bash
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+
+      - name: Compile application and tests
+        id: quick-check
+        shell: bash
+        run: ./gradlew testClasses --no-daemon
+
+      - name: Comment quick check failure
+        if: failure() && steps.quick-check.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          COMMENT_BODY: |
+            <!-- branch-flow-check -->
+            ### Validacion del PR
+
+            El merge temporal con `${{ env.BASE_BRANCH }}` no tiene conflictos, pero la verificacion rapida fallo.
+
+            Revisa el log del job y corrige errores de compilacion, imports o tipos antes de volver a actualizar el PR.
+        with:
+          script: |
+            const marker = '<!-- branch-flow-check -->';
+            const body = process.env.COMMENT_BODY;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Clear previous validation comment
+        if: success()
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          COMMENT_BODY: |
+            <!-- branch-flow-check -->
+            ### Validacion del PR
+
+            La validacion automatica ya paso: el flujo de ramas es correcto, el merge temporal con `${{ env.BASE_BRANCH }}` no tiene conflictos y `./gradlew testClasses --no-daemon` finalizo correctamente.
+        with:
+          script: |
+            const marker = '<!-- branch-flow-check -->';
+            const body = process.env.COMMENT_BODY;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            }
