@@ -12,7 +12,7 @@ public record StoredFileResponse(
 		Long sizeBytes,
 		UUID uploadedById,
 		Instant createdAt,
-		@Schema(description = "Pre-signed URL valid for 15 minutes — use this to download the file")
+		@Schema(description = "Pre-signed URL valid for the configured expiration time — use this to download the file")
 		String downloadUrl
 ) {
 }
