@@ -23,7 +23,7 @@ Convenciones de naming para archivos de migración:
 
 | Tipo | Formato | Ejemplo |
 |---|---|---|
-| Versioned (irreversible) | `V{n}__{descripcion}.sql` | `V2__add_colum_x.sql` |
+| Versioned (irreversible) | `V{n}__{descripcion}.sql` | `V2__add_column_x.sql` |
 | Repeatable (idempotente) | `R__{descripcion}.sql` | `R__refresh_view.sql` |
 
 - Cada archivo se ejecuta **una sola vez** (versioned) o **cuando cambia su checksum** (repeatable).
@@ -34,10 +34,10 @@ Convenciones de naming para archivos de migración:
 ### Para agregar una migración nueva
 
 ```
-src/main/resources/db/migration/V2__descripcion_corta.sql
+src/main/resources/db/migration/V{next}__descripcion_corta.sql
 ```
 
-No tocar `V1__initial_schema.sql`.
+Usar el siguiente número disponible. No tocar `V1__initial_schema.sql` ni ninguna migración ya aplicada.
 
 ## Estrategia de IDs
 
@@ -64,7 +64,7 @@ private UserRole role;
 
 | PG type | Valores Java | Labels español |
 |---|---|---|
-| `user_role` | `ADMIN`, `TEACHER`, `STUDENT` | Administrador, Docente, Estudiante |
+| `user_role` | `ADMIN`, `TEACHER`, `STUDENT`, `COORDINATOR` | Administrador, Docente, Estudiante, Coordinador |
 | `teacher_category` | `PRINCIPAL`, `ASSOCIATE`, `AUXILIARY` | Principal, Asociado, Auxiliar |
 | `teacher_type` | `INTERNAL`, `EXTERNAL` | Interno, Externo |
 | `academic_degree` | `MASTER`, `DOCTOR` | Magíster, Doctor |
@@ -98,7 +98,7 @@ Patrón estándar para gestión de archivos sin exponer URLs de GCS:
 
 ```sql
 CREATE TABLE stored_files (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID PRIMARY KEY,
     original_name   VARCHAR(255) NOT NULL,
     content_type    VARCHAR(100) NOT NULL,
     size_bytes      BIGINT NOT NULL,
@@ -106,18 +106,18 @@ CREATE TABLE stored_files (
     id_uploaded_by  UUID NOT NULL REFERENCES users(id),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_stored_files_uploader ON stored_files (id_uploaded_by);
 ```
 
+- `stored_files.id` se genera en Java con `@UuidGenerator(style = Style.VERSION_7)`, no con `DEFAULT gen_random_uuid()`.
 - Nunca almacenar la URL firmada en la BD — se genera on-demand en `GcsStorageService.signedDownloadUrl()`.
 - Convención de `object_key`: `files/{año}/{uuid}.{ext}`, e.g. `files/2026/0192f8c1-....pdf`.
-- Otros módulos (vouchers, syllabi) pueden referenciar `stored_files.id` en vez de almacenar paths propios.
+- Para código nuevo, preferir referencias a `stored_files.id` en vez de paths propios. Las columnas existentes `vouchers.file_url`, `courses.syllabus_url` y `enrollments.resolution_url` siguen siendo `TEXT` hasta que una migración explícita las cambie.
 
 ## Columnas estándar
 
 | Columna | Tipo PG | Uso |
 |---|---|---|
-| `id` | `UUID` o `BIGINT` | PK |
+| `id` | `UUID`, `INTEGER` o `BIGINT` | PK |
 | `created_at` | `TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Auditoría de creación |
 | `updated_at` | `TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Auditoría de modificación |
 | `deleted_at` | `TIMESTAMPTZ` (nullable) | Soft delete — NULL = activo |
@@ -140,11 +140,13 @@ Optional<Enrollment> findActiveByStudentAndCourse(@Param("studentId") UUID s, @P
 boolean existsByCourse_IdAndTeacher_Id(UUID courseId, UUID teacherId);
 ```
 
-**Obtener referencia lazy** (sin hit a BD, para setear relaciones ManyToOne):
+**Obtener referencia para relaciones** — en servicios del proyecto, `getReference(...)` normalmente valida existencia con `findById` antes de asignar relaciones:
 ```java
-Course course = courseRepository.getReferenceById(courseId);
+Course course = courseService.getReference(courseId);
 assignment.setCourse(course);
 ```
+
+Usar `repository.getReferenceById(...)` solo en código interno donde se acepte una referencia lazy sin validar existencia inmediatamente.
 
 ## Anti-patrones
 

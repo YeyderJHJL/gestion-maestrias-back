@@ -40,7 +40,7 @@ UUID id    = SecurityHelper.currentUserId();
 AppUserPrincipal p = SecurityHelper.currentPrincipal();
 ```
 
-Lanza `AccessDeniedException` si no hay usuario autenticado. Solo usar en código que se ejecuta tras autenticación.
+Lanza `UnauthorizedException` si no hay usuario autenticado. Solo usar en código que se ejecuta tras autenticación.
 
 ## AppJwtAuthenticationConverter
 
@@ -48,10 +48,11 @@ Converter que convierte el JWT de Google en un `UsernamePasswordAuthenticationTo
 
 **Lógica de búsqueda (primer login):**
 1. Busca por `google_sub` (claim `sub`) → usuario que ya inició sesión antes.
-2. Si no encuentra, busca por `email` → usuario pre-registrado por el admin (google_sub era placeholder `"pending-<email>"`).
-3. Vincula el `google_sub` real y actualiza nombre/apellido desde Google si el sub era un placeholder.
-4. Lanza `AccessDeniedException` si el email tampoco existe en la BD.
-5. Lanza `AccessDeniedException` si el usuario tiene `is_active = false`.
+2. Si no encuentra, busca por `email` → usuario pre-registrado por el admin con `google_sub = null`.
+3. Vincula el `google_sub` real y actualiza nombre/apellido desde Google cuando el usuario estaba sin vincular.
+4. Si el email existe pero ya tiene otro `google_sub`, lanza `InvalidBearerTokenException`.
+5. Lanza `InvalidBearerTokenException` si el email no existe en la BD.
+6. Lanza `InvalidBearerTokenException` si el usuario tiene `is_active = false`.
 
 **Pre-registro de usuarios:**
 El admin crea el usuario desde la UI (o con `ADMIN_EMAIL` env var para el admin inicial). El usuario se autentica con Google la primera vez y queda vinculado automáticamente.
@@ -63,11 +64,11 @@ El admin crea el usuario desde la UI (o con `ADMIN_EMAIL` env var para el admin 
 | `dev` / `test` | `SecurityConfig` | `permitAll()` + JWT procesado **cuando viene** → principal se establece si el JWT es válido |
 | `prod` | `ProdSecurityConfig` | Toda request requiere JWT válido; `/actuator/health` público |
 
-En dev: sin JWT → anónimo (OK para Swagger). Con JWT válido → `AppUserPrincipal` disponible.
+En dev: sin JWT → anónimo en la filter chain (útil para Swagger y paths públicos). Con JWT válido → `AppUserPrincipal` disponible. Recordar que `RolesEnforcementAspect` sigue activo en dev y puede rechazar métodos de `@RestController` no públicos si no hay usuario autenticado.
 
 ## CORS
 
-Configurado en `WebConfig.addCorsMappings`. El origen permitido se lee de:
+Configurado como bean `CorsConfigurationSource` en `WebConfig`. El origen permitido se lee de:
 
 ```yaml
 app:

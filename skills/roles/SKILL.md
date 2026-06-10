@@ -1,6 +1,6 @@
 ---
 name: roles
-description: Sistema de roles con @Authorize y @Public — visualización en Swagger, enforcement en producción, comportamiento por defecto. Activar al agregar o modificar endpoints, configurar acceso por rol, o preguntar cómo proteger un endpoint.
+description: Sistema de roles con @Authorize y @Public — visualización en Swagger, enforcement con RolesEnforcementAspect, comportamiento por defecto. Activar al agregar o modificar endpoints, configurar acceso por rol, o preguntar cómo proteger un endpoint.
 ---
 
 # Roles
@@ -10,10 +10,10 @@ description: Sistema de roles con @Authorize y @Public — visualización en Swa
 | Situación | Resultado |
 |---|---|
 | Endpoint sin anotación | Solo **ADMIN** puede acceder (por defecto) |
-| `@Authorize(roles = {...})` | Solo los roles indicados pueden acceder |
+| `@Authorize(roles = {...})` | Los roles indicados pueden acceder; `ADMIN` también pasa por bypass global |
 | `@Public` | Sin autenticación requerida |
 
-Todo esto se documenta automáticamente en Swagger via `RolesOperationCustomizer` y se enforce en producción via `RolesEnforcementAspect`.
+Todo esto se documenta automáticamente en Swagger via `RolesOperationCustomizer` y se enforce con `RolesEnforcementAspect`.
 
 ## @Authorize
 
@@ -59,22 +59,24 @@ public String health() { return "ok"; }
 
 `RolesOperationCustomizer` agrega automáticamente al description de cada operación:
 
-- `@Public` → `> Acceso público — no se requiere autenticación.`
-- `@Authorize(roles = {ADMIN, TEACHER})` → `**Roles requeridos:** ADMIN, TEACHER`
-- Sin anotación → `> Acceso restringido a **ADMIN** (por defecto).`
+- `@Public` → `> Public access — no authentication required.`
+- `@Authorize(roles = {ADMIN, TEACHER})` → `**Required:** **ADMIN**, **TEACHER**`
+- Sin anotación → `> Restricted access to **ADMIN** (default).`
 
 Los endpoints protegidos también reciben el `SecurityRequirement("bearerAuth")` en el spec OpenAPI, lo que hace que Swagger UI muestre el candado y requiera el token para "Try it out".
 
-## Cómo se enforce en producción
+## Cómo se enforce
 
-`RolesEnforcementAspect` es un `@Aspect` activo con `@Profile("!(dev | test)")`. Intercepta todos los métodos de `@RestController` y:
+`RolesEnforcementAspect` es un `@Aspect` activo con `@Profile("!(test)")`. Intercepta todos los métodos de `@RestController` y:
 
-1. Si el método/clase tiene `@Public` → continúa sin verificar.
-2. Si no hay autenticación o es anónima → lanza `AccessDeniedException` (→ 403).
-3. Si tiene `@Authorize` → verifica que la autenticación tenga alguno de los roles requeridos.
-4. Sin anotación → verifica que la autenticación tenga rol `ADMIN`.
+1. Si el path es `/docs`, `/docs/**`, `/actuator/health` o `/actuator/health/**` → continúa sin verificar.
+2. Si el método/clase tiene `@Public` → continúa sin verificar.
+3. Si no hay autenticación o es anónima → lanza `UnauthorizedException` (401).
+4. Si el usuario tiene `ROLE_ADMIN` → continúa, incluso si `ADMIN` no aparece en `@Authorize`.
+5. Si tiene `@Authorize` → verifica que la autenticación tenga alguno de los roles requeridos.
+6. Sin anotación → verifica que la autenticación tenga rol `ADMIN`.
 
-En dev (`SPRING_PROFILES_ACTIVE=dev`) el aspecto está desactivado — el `SecurityConfig` de dev hace `permitAll()`.
+En dev (`SPRING_PROFILES_ACTIVE=dev`) la filter chain hace `permitAll()` y procesa JWT solo si llega uno, pero el aspecto sigue activo. En test el aspecto está desactivado.
 
 ## Roles disponibles
 
@@ -95,7 +97,7 @@ El `RolesEnforcementAspect` busca authorities con el prefijo `ROLE_`:
 - `ROLE_STUDENT`
 - `ROLE_COORDINATOR`
 
-El `SecurityConfig` de producción (a implementar) debe convertir el claim `role` del JWT de Google en estas authorities usando un `JwtAuthenticationConverter`.
+`AppJwtAuthenticationConverter` consulta la BD con `UserAccountService` y crea `ROLE_<ROLE>` desde `users.role`. El JWT de Google no trae el rol de la aplicación.
 
 ## Anti-patrones
 

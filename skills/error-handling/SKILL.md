@@ -11,7 +11,7 @@ description: Formas de respuesta REST (ApiResponse vs ApiError), jerarquía de e
 
 **`ApiError`** — para 4xx y 5xx. Incluye `status`, `error`, `message`, `path`, `timestamp` y `validationErrors` opcional.
 
-El status HTTP es la fuente de verdad — no duplicarlo en el body.
+El status HTTP es la fuente de verdad. En respuestas exitosas no se duplica en `ApiResponse`; en errores, `ApiError.status` refleja el status HTTP.
 
 ## ApiResponse\<T\>
 
@@ -84,9 +84,16 @@ Convenciones:
 | `HandlerMethodValidationException` | 400 | incluye `validationErrors` por parámetro |
 | `HttpMessageNotReadableException` | 400 | JSON mal formado |
 | `MethodArgumentTypeMismatchException` | 400 | tipo incorrecto en path/query param |
+| `NoHandlerFoundException` | 404 | endpoint no existe |
+| `HttpRequestMethodNotSupportedException` | 405 | método HTTP no permitido |
+| `UnauthorizedException` | 401 | autenticación requerida dentro de MVC/aspectos |
 | `DataIntegrityViolationException` | 409 | log WARN con causa específica |
 | `AccessDeniedException` | 403 | de Spring Security |
+| `MaxUploadSizeExceededException` | 413 | archivo excede el límite configurado |
+| `ErrorResponseException` no-5xx | status original | se maneja dentro del catch-all con mensaje seguro |
 | `Exception` (catch-all) | 500 | log ERROR con stack trace completo |
+
+`SecurityExceptionResponder` escribe el mismo formato `ApiError` para errores de seguridad que ocurren en la filter chain antes de llegar a MVC.
 
 ## Política de logging
 
@@ -109,7 +116,9 @@ Nunca loguear stack traces para errores de cliente. No filtrar `ex.getMessage()`
 | **401 Unauthorized** | Token ausente o inválido |
 | **403 Forbidden** | Autenticado pero sin el rol requerido |
 | **404 Not Found** | Recurso no existe |
+| **405 Method Not Allowed** | Método HTTP no soportado por el endpoint |
 | **409 Conflict** | Violación de regla de negocio, duplicado, estado inválido |
+| **413 Payload Too Large** | Archivo excede `MAX_FILE_SIZE` / `MAX_REQUEST_SIZE` |
 | **500 Internal Server Error** | Solo excepciones inesperadas |
 
 ## Ejemplos de body de respuesta
