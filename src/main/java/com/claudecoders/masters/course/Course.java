@@ -5,8 +5,6 @@ import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -16,12 +14,10 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "courses")
@@ -32,7 +28,6 @@ public class Course extends BaseEntity implements Auditable {
 	private static final Set<String> AUDIT_FIELDS = Set.of(
 			"code",
 			"name",
-			"type",
 			"startDate",
 			"endDate",
 			"observations",
@@ -50,11 +45,6 @@ public class Course extends BaseEntity implements Auditable {
 
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;
-
-	@Enumerated(EnumType.STRING)
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(name = "type", nullable = false, columnDefinition = "course_type")
-	private CourseType type;
 
 	@Column(name = "start_date", nullable = false)
 	private LocalDate startDate;
@@ -91,14 +81,6 @@ public class Course extends BaseEntity implements Auditable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public CourseType getType() {
-		return type;
-	}
-
-	public void setType(CourseType type) {
-		this.type = type;
 	}
 
 	public LocalDate getStartDate() {

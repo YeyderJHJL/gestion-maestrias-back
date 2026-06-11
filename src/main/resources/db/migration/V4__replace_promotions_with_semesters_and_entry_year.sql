@@ -140,7 +140,6 @@ CREATE TABLE courses_new (
     id                UUID         NOT NULL,
     code              VARCHAR(100) NOT NULL,
     name              VARCHAR(255) NOT NULL,
-    type              course_type  NOT NULL,
     start_date        DATE         NOT NULL,
     end_date          DATE         NOT NULL,
     observations      TEXT,
@@ -154,7 +153,6 @@ INSERT INTO courses_new (
     id,
     code,
     name,
-    type,
     start_date,
     end_date,
     observations,
@@ -167,7 +165,6 @@ SELECT
     id,
     code,
     name,
-    type,
     start_date,
     end_date,
     observations,
@@ -466,3 +463,5 @@ FROM programs;
 
 SELECT setval(pg_get_serial_sequence('assignments', 'id'), COALESCE(MAX(id), 1), MAX(id) IS NOT NULL)
 FROM assignments;
+
+DROP TYPE IF EXISTS course_type;

@@ -71,7 +71,6 @@ public class CourseService {
 		}
 		course.setCode(request.code());
 		course.setName(request.name());
-		course.setType(request.type());
 		course.setStartDate(request.startDate());
 		course.setEndDate(request.endDate());
 		course.setObservations(request.observations());
@@ -83,7 +82,6 @@ public class CourseService {
 				course.getId(),
 				course.getCode(),
 				course.getName(),
-				course.getType(),
 				course.getStartDate(),
 				course.getEndDate(),
 				course.getObservations(),
