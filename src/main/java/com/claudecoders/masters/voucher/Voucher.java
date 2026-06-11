@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -42,9 +41,6 @@ public class Voucher extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "id_file", nullable = false)
 	private StoredFile file;
-
-	@Column(name = "declared_amount", nullable = false, precision = 10, scale = 2)
-	private BigDecimal declaredAmount;
 
 	@Column(name = "observation", columnDefinition = "TEXT")
 	private String observation;
@@ -79,14 +75,6 @@ public class Voucher extends BaseEntity {
 
 	public void setFile(StoredFile file) {
 		this.file = file;
-	}
-
-	public BigDecimal getDeclaredAmount() {
-		return declaredAmount;
-	}
-
-	public void setDeclaredAmount(BigDecimal declaredAmount) {
-		this.declaredAmount = declaredAmount;
 	}
 
 	public String getObservation() {

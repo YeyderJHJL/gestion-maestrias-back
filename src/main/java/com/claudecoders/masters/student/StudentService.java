@@ -1,7 +1,6 @@
 package com.claudecoders.masters.student;
 
-import com.claudecoders.masters.promotion.Promotion;
-import com.claudecoders.masters.promotion.PromotionService;
+import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.student.dto.StudentRequest;
@@ -19,16 +18,16 @@ public class StudentService {
 
 	private final StudentRepository studentRepository;
 	private final UserService userService;
-	private final PromotionService promotionService;
+	private final StoredFileService storedFileService;
 
 	public StudentService(
 			StudentRepository studentRepository,
 			UserService userService,
-			PromotionService promotionService
+			StoredFileService storedFileService
 	) {
 		this.studentRepository = studentRepository;
 		this.userService = userService;
-		this.promotionService = promotionService;
+		this.storedFileService = storedFileService;
 	}
 
 	@Transactional(readOnly = true)
@@ -82,11 +81,14 @@ public class StudentService {
 	private void applyRequest(Student student, StudentRequest request) {
 		User user = userService.getReference(request.userId());
 		if (user.getRole() != UserRole.STUDENT) {
-			throw new BusinessException("User must have STUDENT role");
+			throw new BusinessException("El usuario debe tener rol ESTUDIANTE");
 		}
-		Promotion promotion = promotionService.getReference(request.promotionId());
 		student.setUser(user);
-		student.setPromotion(promotion);
+		student.setYearPromotion(request.yearPromotion());
+		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
+		student.setReactualizationFile(request.reactualizationFileId() == null
+				? null
+				: storedFileService.getReference(request.reactualizationFileId()));
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());
@@ -94,15 +96,15 @@ public class StudentService {
 
 	private StudentResponse toResponse(Student student) {
 		User user = student.getUser();
-		Promotion promotion = student.getPromotion();
 		return new StudentResponse(
 				student.getId(),
 				user.getId(),
 				user.getEmail(),
 				user.getFirstName(),
 				user.getLastName(),
-				promotion.getId(),
-				promotion.getName(),
+				student.getYearPromotion(),
+				student.getStatus(),
+				storedFileService.toSummary(student.getReactualizationFile()),
 				student.getCui(),
 				student.getPaymentCode(),
 				student.getPhone(),

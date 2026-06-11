@@ -1,6 +1,5 @@
 package com.claudecoders.masters.payment;
 
-import com.claudecoders.masters.pension.Pension;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
@@ -35,9 +34,8 @@ public class Payment extends BaseEntity {
 	@JoinColumn(name = "id_student", nullable = false)
 	private Student student;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_pension", nullable = false)
-	private Pension pension;
+	@Column(name = "payment_number", nullable = false)
+	private Integer paymentNumber;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "id_state", nullable = false)
@@ -62,12 +60,12 @@ public class Payment extends BaseEntity {
 		this.student = student;
 	}
 
-	public Pension getPension() {
-		return pension;
+	public Integer getPaymentNumber() {
+		return paymentNumber;
 	}
 
-	public void setPension(Pension pension) {
-		this.pension = pension;
+	public void setPaymentNumber(Integer paymentNumber) {
+		this.paymentNumber = paymentNumber;
 	}
 
 	public State getState() {

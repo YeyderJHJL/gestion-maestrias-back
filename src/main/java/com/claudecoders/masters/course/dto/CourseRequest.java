@@ -10,8 +10,6 @@ import java.util.UUID;
 
 @Schema(description = "Course create/update request")
 public record CourseRequest(
-		@NotNull Integer programId,
-		@NotNull Integer promotionId,
 		@NotBlank @Size(max = 100) String code,
 		@NotBlank @Size(max = 255) String name,
 		@NotNull CourseType type,

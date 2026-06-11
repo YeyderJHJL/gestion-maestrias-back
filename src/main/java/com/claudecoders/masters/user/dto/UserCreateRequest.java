@@ -1,15 +1,18 @@
 package com.claudecoders.masters.user.dto;
 
 import com.claudecoders.masters.shared.enums.UserRole;
+import com.claudecoders.masters.student.StudentStatus;
 import com.claudecoders.masters.teacher.AcademicDegree;
 import com.claudecoders.masters.teacher.TeacherCategory;
 import com.claudecoders.masters.teacher.TeacherType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 @Schema(description = "User create request with optional role-specific profile")
 public record UserCreateRequest(
@@ -29,12 +32,15 @@ public record UserCreateRequest(
 			AcademicDegree academicDegree,
 			@Size(max = 255) String specialty,
 			@NotNull TeacherType type,
-			@Size(max = 20) String phone
+			@Size(max = 20) String phone,
+			@Size(max = 255) String university
 	) {
 	}
 
 	public record StudentProfileRequest(
-			@NotNull Integer promotionId,
+			@NotNull @Min(2001) Integer yearPromotion,
+			StudentStatus status,
+			UUID reactualizationFileId,
 			@NotBlank @Size(max = 20) String cui,
 			@NotBlank @Size(max = 100) String paymentCode,
 			@Size(max = 20) String phone

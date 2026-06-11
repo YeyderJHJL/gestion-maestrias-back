@@ -52,9 +52,9 @@ private UUID id;
 
 Usar `Style.VERSION_7` (time-ordered). Nunca `@GeneratedValue(strategy = GenerationType.UUID)` (emite v4 random, fragmenta índices).
 
-**PKs de tablas catálogo** (`programs`, `promotions`, `pensions`, `states`): `Integer` con `GenerationType.IDENTITY`.
+**PKs de tablas catálogo** (`programs`, `semesters`, `states`): `Integer` con `GenerationType.IDENTITY`.
 **PKs de tablas append-only** (`audit_logs`, `notifications`): `Long` con `GenerationType.IDENTITY`.
-**`assignments`**: `Long` con `GenerationType.IDENTITY` + índice único parcial `(id_course, id_teacher) WHERE deleted_at IS NULL`.
+**`assignments`**: `Long` con `GenerationType.IDENTITY` + índice único parcial `(id_course, id_teacher, id_semester) WHERE deleted_at IS NULL`.
 
 ## Soft delete
 

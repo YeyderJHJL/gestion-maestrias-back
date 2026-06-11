@@ -2,6 +2,8 @@ package com.claudecoders.masters.shared.seed;
 
 import com.claudecoders.masters.program.Program;
 import com.claudecoders.masters.program.ProgramRepository;
+import com.claudecoders.masters.state.State;
+import com.claudecoders.masters.state.StateRepository;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.user.UserRepository;
 import com.claudecoders.masters.shared.enums.UserRole;
@@ -19,19 +21,26 @@ public class DatabaseSeeder implements CommandLineRunner {
 
 	private final ProgramRepository programRepository;
 	private final UserRepository userRepository;
+	private final StateRepository stateRepository;
 
 	@Value("${app.seed.admin-email:#{null}}")
 	private String adminEmail;
 
-	public DatabaseSeeder(ProgramRepository programRepository, UserRepository userRepository) {
+	public DatabaseSeeder(
+			ProgramRepository programRepository,
+			UserRepository userRepository,
+			StateRepository stateRepository
+	) {
 		this.programRepository = programRepository;
 		this.userRepository = userRepository;
+		this.stateRepository = stateRepository;
 	}
 
 	@Override
 	@Transactional
 	public void run(String... args) {
 		seedPrograms();
+		seedStates();
 		seedAdminUser();
 	}
 
@@ -49,9 +58,27 @@ public class DatabaseSeeder implements CommandLineRunner {
 		if (!exists) {
 			Program program = new Program();
 			program.setName(name);
+			program.setPensionCount(14);
 			programRepository.save(program);
 			log.info("Seeded program: {}", name);
 		}
+	}
+
+	private void seedStates() {
+		seedState("PAYMENT", "PENDING", "Pendiente", "Pago pendiente de voucher validado");
+	}
+
+	private void seedState(String entityType, String code, String name, String description) {
+		if (stateRepository.findByEntityTypeAndCode(entityType, code).isPresent()) {
+			return;
+		}
+		State state = new State();
+		state.setEntityType(entityType);
+		state.setCode(code);
+		state.setName(name);
+		state.setDescription(description);
+		stateRepository.save(state);
+		log.info("Seeded state: {}/{}", entityType, code);
 	}
 
 	private void seedAdminUser() {

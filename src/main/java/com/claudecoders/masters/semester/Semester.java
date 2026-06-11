@@ -1,4 +1,4 @@
-package com.claudecoders.masters.program;
+package com.claudecoders.masters.semester;
 
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import jakarta.persistence.Column;
@@ -11,21 +11,21 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
-@Table(name = "programs")
-@SQLDelete(sql = "UPDATE programs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Table(name = "semesters")
+@SQLDelete(sql = "UPDATE semesters SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Program extends BaseEntity {
+public class Semester extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", nullable = false, updatable = false)
 	private Integer id;
 
-	@Column(name = "name", nullable = false, length = 255)
-	private String name;
+	@Column(name = "year", nullable = false)
+	private Integer year;
 
-	@Column(name = "pension_count", nullable = false)
-	private Integer pensionCount = 14;
+	@Column(name = "code", nullable = false, length = 50)
+	private String code;
 
 	public Integer getId() {
 		return id;
@@ -35,19 +35,19 @@ public class Program extends BaseEntity {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public Integer getYear() {
+		return year;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setYear(Integer year) {
+		this.year = year;
 	}
 
-	public Integer getPensionCount() {
-		return pensionCount;
+	public String getCode() {
+		return code;
 	}
 
-	public void setPensionCount(Integer pensionCount) {
-		this.pensionCount = pensionCount;
+	public void setCode(String code) {
+		this.code = code;
 	}
 }

@@ -77,7 +77,6 @@ public class VoucherService {
 		voucher.setPayment(payment);
 		voucher.setState(state);
 		voucher.setFile(file);
-		voucher.setDeclaredAmount(request.declaredAmount());
 		voucher.setObservation(request.observation());
 	}
 
@@ -90,7 +89,6 @@ public class VoucherService {
 				state.getCode(),
 				state.getName(),
 				storedFileService.toSummary(voucher.getFile()),
-				voucher.getDeclaredAmount(),
 				voucher.getObservation(),
 				voucher.getCreatedAt(),
 				voucher.getUpdatedAt()

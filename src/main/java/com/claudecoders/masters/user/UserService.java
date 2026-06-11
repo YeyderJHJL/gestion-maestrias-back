@@ -1,13 +1,19 @@
 package com.claudecoders.masters.user;
 
-import com.claudecoders.masters.promotion.Promotion;
-import com.claudecoders.masters.promotion.PromotionService;
+import com.claudecoders.masters.file.StoredFileService;
+import com.claudecoders.masters.payment.Payment;
+import com.claudecoders.masters.payment.PaymentRepository;
+import com.claudecoders.masters.program.Program;
+import com.claudecoders.masters.program.ProgramRepository;
 import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.shared.security.UserAccountService;
+import com.claudecoders.masters.state.State;
+import com.claudecoders.masters.state.StateRepository;
 import com.claudecoders.masters.student.Student;
 import com.claudecoders.masters.student.StudentRepository;
+import com.claudecoders.masters.student.StudentStatus;
 import com.claudecoders.masters.teacher.Teacher;
 import com.claudecoders.masters.teacher.TeacherRepository;
 import com.claudecoders.masters.user.dto.StudentProfileResponse;
@@ -28,20 +34,29 @@ public class UserService {
 	private final UserAccountService userAccountService;
 	private final TeacherRepository teacherRepository;
 	private final StudentRepository studentRepository;
-	private final PromotionService promotionService;
+	private final StoredFileService storedFileService;
+	private final ProgramRepository programRepository;
+	private final StateRepository stateRepository;
+	private final PaymentRepository paymentRepository;
 
 	public UserService(
 			UserRepository userRepository,
 			UserAccountService userAccountService,
 			TeacherRepository teacherRepository,
 			StudentRepository studentRepository,
-			PromotionService promotionService
+			StoredFileService storedFileService,
+			ProgramRepository programRepository,
+			StateRepository stateRepository,
+			PaymentRepository paymentRepository
 	) {
 		this.userRepository = userRepository;
 		this.userAccountService = userAccountService;
 		this.teacherRepository = teacherRepository;
 		this.studentRepository = studentRepository;
-		this.promotionService = promotionService;
+		this.storedFileService = storedFileService;
+		this.programRepository = programRepository;
+		this.stateRepository = stateRepository;
+		this.paymentRepository = paymentRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -180,18 +195,39 @@ public class UserService {
 		teacher.setSpecialty(request.specialty());
 		teacher.setType(request.type());
 		teacher.setPhone(request.phone());
+		teacher.setUniversity(request.university());
 		return toTeacherProfileResponse(teacherRepository.save(teacher));
 	}
 
 	private StudentProfileResponse createStudent(User user, UserCreateRequest.StudentProfileRequest request) {
-		Promotion promotion = promotionService.getReference(request.promotionId());
 		Student student = new Student();
 		student.setUser(user);
-		student.setPromotion(promotion);
+		student.setYearPromotion(request.yearPromotion());
+		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
+		student.setReactualizationFile(request.reactualizationFileId() == null
+				? null
+				: storedFileService.getReference(request.reactualizationFileId()));
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());
-		return toStudentProfileResponse(studentRepository.save(student));
+		Student savedStudent = studentRepository.save(student);
+		createInitialPayments(savedStudent);
+		return toStudentProfileResponse(savedStudent);
+	}
+
+	private void createInitialPayments(Student student) {
+		Program program = programRepository.findFirstByOrderByIdAsc()
+				.orElseThrow(() -> new BusinessException("Debe existir un programa configurado para generar pagos"));
+		State pendingState = stateRepository.findByEntityTypeAndCode("PAYMENT", "PENDING")
+				.orElseThrow(() -> new BusinessException("Debe existir el estado PAYMENT/PENDING para generar pagos"));
+
+		for (int number = 1; number <= program.getPensionCount(); number++) {
+			Payment payment = new Payment();
+			payment.setStudent(student);
+			payment.setPaymentNumber(number);
+			payment.setState(pendingState);
+			paymentRepository.save(payment);
+		}
 	}
 
 	private UserProfileResponse toProfileResponse(
@@ -215,11 +251,11 @@ public class UserService {
 	}
 
 	private StudentProfileResponse toStudentProfileResponse(Student student) {
-		Promotion promotion = student.getPromotion();
 		return new StudentProfileResponse(
 				student.getId(),
-				promotion.getId(),
-				promotion.getName(),
+				student.getYearPromotion(),
+				student.getStatus(),
+				storedFileService.toSummary(student.getReactualizationFile()),
 				student.getCui(),
 				student.getPaymentCode(),
 				student.getPhone(),
@@ -237,6 +273,7 @@ public class UserService {
 				teacher.getSpecialty(),
 				teacher.getType(),
 				teacher.getPhone(),
+				teacher.getUniversity(),
 				teacher.getCreatedAt(),
 				teacher.getUpdatedAt()
 		);

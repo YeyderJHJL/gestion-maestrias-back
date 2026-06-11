@@ -14,6 +14,9 @@ public record AssignmentResponse(
 		UUID teacherId,
 		String teacherEmail,
 		String teacherName,
+		Integer semesterId,
+		Integer semesterYear,
+		String semesterCode,
 		LocalDate assignmentDate,
 		Instant createdAt,
 		Instant updatedAt

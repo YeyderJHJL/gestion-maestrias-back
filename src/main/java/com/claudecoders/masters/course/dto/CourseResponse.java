@@ -10,10 +10,6 @@ import java.util.UUID;
 @Schema(description = "Course response")
 public record CourseResponse(
 		UUID id,
-		Integer programId,
-		String programName,
-		Integer promotionId,
-		String promotionName,
 		String code,
 		String name,
 		CourseType type,

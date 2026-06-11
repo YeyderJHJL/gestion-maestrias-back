@@ -44,10 +44,10 @@ Usar el siguiente número disponible. No tocar `V1__initial_schema.sql` ni ningu
 | Tipo de PK | Tablas | Generación en Java |
 |---|---|---|
 | `UUID` (v7) | `users`, `teachers`, `students`, `courses`, `enrollments`, `grades`, `payments`, `vouchers`, `stored_files` | `@UuidGenerator(style = Style.VERSION_7)` |
-| `INTEGER` IDENTITY | `programs`, `promotions`, `pensions`, `states` | `@GeneratedValue(strategy = IDENTITY)` |
+| `INTEGER` IDENTITY | `programs`, `semesters`, `states` | `@GeneratedValue(strategy = IDENTITY)` |
 | `BIGINT` IDENTITY | `audit_logs`, `notifications`, `assignments` | `@GeneratedValue(strategy = IDENTITY)` |
 
-`assignments` usa BIGINT IDENTITY como PK surrogate + índice único parcial `(id_course, id_teacher) WHERE deleted_at IS NULL` para soportar reasignación después de soft delete.
+`assignments` usa BIGINT IDENTITY como PK surrogate + índice único parcial `(id_course, id_teacher, id_semester) WHERE deleted_at IS NULL` para soportar reasignación después de soft delete y repetir el curso/docente en otro semestre.
 
 ## Enums de PostgreSQL
 
@@ -69,6 +69,7 @@ private UserRole role;
 | `teacher_type` | `INTERNAL`, `EXTERNAL` | Interno, Externo |
 | `academic_degree` | `MASTER`, `DOCTOR` | Magíster, Doctor |
 | `course_type` | `REGULAR`, `THESIS`, `TOPICS` | Regular, Tesis, Tópicos |
+| `student_status` | `REGULAR`, `REACTUALIZATION` | Regular, Reactualización |
 | `notification_type` | `VOUCHER_UPLOADED`, `VOUCHER_VALIDATED`, `VOUCHER_OBSERVED`, `VOUCHER_REJECTED`, `GRADE_REGISTERED`, `GRADE_MODIFIED`, `ENROLLMENT_UPDATED` | (ver NotificationType.java) |
 
 ## Soft delete con índices parciales
@@ -76,17 +77,17 @@ private UserRole role;
 `@SQLRestriction("deleted_at IS NULL")` filtra automáticamente. Para unicidad post-soft-delete, el schema usa índices únicos parciales:
 
 ```sql
--- Ejemplo: asegurar que solo hay un assignment activo por (curso, docente)
+-- Ejemplo: asegurar que solo hay un assignment activo por (curso, docente, semestre)
 CREATE UNIQUE INDEX uq_assignments_active
-    ON assignments (id_course, id_teacher)
+    ON assignments (id_course, id_teacher, id_semester)
     WHERE deleted_at IS NULL;
 ```
 
 JPA no declara estos índices — son invariantes a nivel BD. Para pre-validar en Java:
 
 ```java
-if (repo.existsByCourse_IdAndTeacher_Id(courseId, teacherId)) {
-    throw new BusinessException("Ya existe una asignación activa para este curso y docente");
+if (repo.existsByCourse_IdAndTeacher_IdAndSemester_Id(courseId, teacherId, semesterId)) {
+    throw new BusinessException("Ya existe una asignación activa para este curso, docente y semestre");
 }
 ```
 
@@ -111,7 +112,7 @@ CREATE TABLE stored_files (
 - `stored_files.id` se genera en Java con `@UuidGenerator(style = Style.VERSION_7)`, no con `DEFAULT gen_random_uuid()`.
 - Nunca almacenar la URL firmada en la BD — se genera on-demand en `GcsStorageService.signedDownloadUrl()`.
 - Convención de `object_key`: `files/{año}/{uuid}.{ext}`, e.g. `files/2026/0192f8c1-....pdf`.
-- Las tablas de dominio referencian `stored_files.id`; no guardan URLs ni paths propios. Convenciones actuales: `courses.id_syllabus_file`, `enrollments.id_resolution_file`, `vouchers.id_file`.
+- Las tablas de dominio referencian `stored_files.id`; no guardan URLs ni paths propios. Convenciones actuales: `students.id_reactualization_file`, `courses.id_syllabus_file`, `enrollments.id_resolution_file`, `vouchers.id_file`.
 - En respuestas de dominio, devolver metadata resumida del archivo. Para descarga, el cliente debe llamar `GET /api/v1/files/{id}` y usar el `downloadUrl` temporal.
 
 ## Columnas estándar
@@ -123,11 +124,13 @@ CREATE TABLE stored_files (
 | `updated_at` | `TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Auditoría de modificación |
 | `deleted_at` | `TIMESTAMPTZ` (nullable) | Soft delete — NULL = activo |
 
+En tablas con auditoría completa, `created_at`, `updated_at` y `deleted_at` deben ser las últimas columnas físicas, en ese orden. Si una migración agrega columnas de negocio a una tabla existente y el orden físico importa, no basta con `ALTER TABLE ... ADD COLUMN` porque PostgreSQL las agrega al final; reconstruir la tabla en una migración nueva, copiar datos, renombrar y recrear constraints/índices.
+
 ## Patrones de query
 
 **Relación simple** — `@SQLRestriction` aplica automáticamente:
 ```java
-List<Student> findByPromotionId(Integer promotionId);
+List<Enrollment> findByCourse_IdOrderByEnrollmentDateAsc(UUID courseId);
 ```
 
 **JPQL con join** — no agregar `deleted_at IS NULL` manualmente:
@@ -138,7 +141,7 @@ Optional<Enrollment> findActiveByStudentAndCourse(@Param("studentId") UUID s, @P
 
 **Verificar existencia con FK compuesta**:
 ```java
-boolean existsByCourse_IdAndTeacher_Id(UUID courseId, UUID teacherId);
+boolean existsByCourse_IdAndTeacher_IdAndSemester_Id(UUID courseId, UUID teacherId, Integer semesterId);
 ```
 
 **Obtener referencia para relaciones** — en servicios del proyecto, `getReference(...)` normalmente valida existencia con `findById` antes de asignar relaciones:

@@ -7,6 +7,7 @@ import java.time.Instant;
 public record ProgramResponse(
 		Integer id,
 		String name,
+		Integer pensionCount,
 		Instant createdAt,
 		Instant updatedAt
 ) {

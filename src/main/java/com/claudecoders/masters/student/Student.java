@@ -1,11 +1,13 @@
 package com.claudecoders.masters.student;
 
-import com.claudecoders.masters.promotion.Promotion;
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -15,10 +17,12 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Set;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "students")
@@ -28,7 +32,9 @@ public class Student extends BaseEntity implements Auditable {
 
 	private static final Set<String> AUDIT_FIELDS = Set.of(
 			"user",
-			"promotion",
+			"yearPromotion",
+			"status",
+			"reactualizationFile",
 			"cui",
 			"paymentCode",
 			"phone"
@@ -44,9 +50,17 @@ public class Student extends BaseEntity implements Auditable {
 	@JoinColumn(name = "id_user", nullable = false)
 	private User user;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_promotion", nullable = false)
-	private Promotion promotion;
+	@Column(name = "year_promotion", nullable = false)
+	private Integer yearPromotion;
+
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	@Column(name = "status", nullable = false, columnDefinition = "student_status")
+	private StudentStatus status = StudentStatus.REGULAR;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_reactualization_file")
+	private StoredFile reactualizationFile;
 
 	@Column(name = "cui", nullable = false, length = 20)
 	private String cui;
@@ -73,12 +87,28 @@ public class Student extends BaseEntity implements Auditable {
 		this.user = user;
 	}
 
-	public Promotion getPromotion() {
-		return promotion;
+	public Integer getYearPromotion() {
+		return yearPromotion;
 	}
 
-	public void setPromotion(Promotion promotion) {
-		this.promotion = promotion;
+	public void setYearPromotion(Integer yearPromotion) {
+		this.yearPromotion = yearPromotion;
+	}
+
+	public StudentStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(StudentStatus status) {
+		this.status = status;
+	}
+
+	public StoredFile getReactualizationFile() {
+		return reactualizationFile;
+	}
+
+	public void setReactualizationFile(StoredFile reactualizationFile) {
+		this.reactualizationFile = reactualizationFile;
 	}
 
 	public String getCui() {

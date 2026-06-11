@@ -59,12 +59,14 @@ public class ProgramService {
 
 	private void applyRequest(Program program, ProgramRequest request) {
 		program.setName(request.name());
+		program.setPensionCount(request.pensionCount());
 	}
 
 	private ProgramResponse toResponse(Program program) {
 		return new ProgramResponse(
 				program.getId(),
 				program.getName(),
+				program.getPensionCount(),
 				program.getCreatedAt(),
 				program.getUpdatedAt()
 		);

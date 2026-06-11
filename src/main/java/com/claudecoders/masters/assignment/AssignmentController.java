@@ -40,15 +40,16 @@ public class AssignmentController {
 		return ApiResponse.ok(assignmentService.findAll());
 	}
 
-	@Operation(summary = "Get assignment by course and teacher")
+	@Operation(summary = "Get assignment by course, teacher and semester")
 	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
-		description = "Get assignment by course and teacher (only ADMIN and COORDINATOR can access)")
-	@GetMapping("/courses/{courseId}/teachers/{teacherId}")
+		description = "Get assignment by course, teacher and semester (only ADMIN and COORDINATOR can access)")
+	@GetMapping("/courses/{courseId}/teachers/{teacherId}/semesters/{semesterId}")
 	public ApiResponse<AssignmentResponse> findById(
 			@PathVariable UUID courseId,
-			@PathVariable UUID teacherId
+			@PathVariable UUID teacherId,
+			@PathVariable Integer semesterId
 	) {
-		return ApiResponse.ok(assignmentService.findById(courseId, teacherId));
+		return ApiResponse.ok(assignmentService.findById(courseId, teacherId, semesterId));
 	}
 
 	@Operation(summary = "Create assignment")
@@ -63,21 +64,26 @@ public class AssignmentController {
 	@Operation(summary = "Update assignment")
 	@Authorize(roles = { UserRole.ADMIN }, 
 		description = "Update assignment information (only ADMIN can access)")
-	@PutMapping("/courses/{courseId}/teachers/{teacherId}")
+	@PutMapping("/courses/{courseId}/teachers/{teacherId}/semesters/{semesterId}")
 	public ApiResponse<AssignmentResponse> update(
 			@PathVariable UUID courseId,
 			@PathVariable UUID teacherId,
+			@PathVariable Integer semesterId,
 			@Valid @RequestBody AssignmentRequest request
 	) {
-		return ApiResponse.ok(assignmentService.update(courseId, teacherId, request), "Assignment updated");
+		return ApiResponse.ok(assignmentService.update(courseId, teacherId, semesterId, request), "Assignment updated");
 	}
 
 	@Operation(summary = "Delete assignment")
 	@Authorize(roles = { UserRole.ADMIN }, 
 		description = "Delete an assignment (only ADMIN can access)")
-	@DeleteMapping("/courses/{courseId}/teachers/{teacherId}")
-	public ApiResponse<Void> delete(@PathVariable UUID courseId, @PathVariable UUID teacherId) {
-		assignmentService.delete(courseId, teacherId);
+	@DeleteMapping("/courses/{courseId}/teachers/{teacherId}/semesters/{semesterId}")
+	public ApiResponse<Void> delete(
+			@PathVariable UUID courseId,
+			@PathVariable UUID teacherId,
+			@PathVariable Integer semesterId
+	) {
+		assignmentService.delete(courseId, teacherId, semesterId);
 		return ApiResponse.ok(null, "Assignment deleted");
 	}
 }

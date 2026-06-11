@@ -2,6 +2,7 @@ package com.claudecoders.masters.enrollment;
 
 import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.semester.Semester;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
@@ -44,6 +45,10 @@ public class Enrollment extends BaseEntity {
 	@JoinColumn(name = "id_state", nullable = false)
 	private State state;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_semester", nullable = false)
+	private Semester semester;
+
 	@Column(name = "enrollment_date", nullable = false)
 	private LocalDate enrollmentDate = LocalDate.now();
 
@@ -84,6 +89,14 @@ public class Enrollment extends BaseEntity {
 
 	public void setState(State state) {
 		this.state = state;
+	}
+
+	public Semester getSemester() {
+		return semester;
+	}
+
+	public void setSemester(Semester semester) {
+		this.semester = semester;
 	}
 
 	public LocalDate getEnrollmentDate() {

@@ -1,8 +1,6 @@
 package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.file.StoredFile;
-import com.claudecoders.masters.program.Program;
-import com.claudecoders.masters.promotion.Promotion;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,14 +33,6 @@ public class Course extends BaseEntity {
 	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_program", nullable = false)
-	private Program program;
-
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_promotion", nullable = false)
-	private Promotion promotion;
-
 	@Column(name = "code", nullable = false, length = 100)
 	private String code;
 
@@ -73,22 +63,6 @@ public class Course extends BaseEntity {
 
 	public void setId(UUID id) {
 		this.id = id;
-	}
-
-	public Program getProgram() {
-		return program;
-	}
-
-	public void setProgram(Program program) {
-		this.program = program;
-	}
-
-	public Promotion getPromotion() {
-		return promotion;
-	}
-
-	public void setPromotion(Promotion promotion) {
-		this.promotion = promotion;
 	}
 
 	public String getCode() {

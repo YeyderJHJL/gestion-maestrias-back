@@ -16,6 +16,7 @@ public record TeacherProfileResponse(
 		String specialty,
 		TeacherType type,
 		String phone,
+		String university,
 		Instant createdAt,
 		Instant updatedAt
 ) {

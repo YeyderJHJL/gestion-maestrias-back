@@ -59,8 +59,9 @@ public class UserController {
 				var student = studentService.findByUserId(principal.userId());
 				studentProfile = new StudentProfileResponse(
 						student.id(),
-						student.promotionId(),
-						student.promotionName(),
+						student.yearPromotion(),
+						student.status(),
+						student.reactualizationFile(),
 						student.cui(),
 						student.paymentCode(),
 						student.phone(),
@@ -78,6 +79,7 @@ public class UserController {
 						teacher.specialty(),
 						teacher.type(),
 						teacher.phone(),
+						teacher.university(),
 						teacher.createdAt(),
 						teacher.updatedAt()
 				);

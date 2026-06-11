@@ -1,6 +1,7 @@
 package com.claudecoders.masters.assignment;
 
 import com.claudecoders.masters.course.Course;
+import com.claudecoders.masters.semester.Semester;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.teacher.Teacher;
 import jakarta.persistence.Column;
@@ -35,6 +36,10 @@ public class Assignment extends BaseEntity {
 	@JoinColumn(name = "id_teacher", nullable = false, updatable = false)
 	private Teacher teacher;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_semester", nullable = false)
+	private Semester semester;
+
 	@Column(name = "assignment_date", nullable = false)
 	private LocalDate assignmentDate = LocalDate.now();
 
@@ -60,6 +65,14 @@ public class Assignment extends BaseEntity {
 
 	public void setTeacher(Teacher teacher) {
 		this.teacher = teacher;
+	}
+
+	public Semester getSemester() {
+		return semester;
+	}
+
+	public void setSemester(Semester semester) {
+		this.semester = semester;
 	}
 
 	public LocalDate getAssignmentDate() {
