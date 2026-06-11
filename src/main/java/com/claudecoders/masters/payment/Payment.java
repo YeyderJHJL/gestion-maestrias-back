@@ -1,7 +1,7 @@
 package com.claudecoders.masters.payment;
 
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
-import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -22,7 +23,13 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Table(name = "payments")
 @SQLDelete(sql = "UPDATE payments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Payment extends BaseEntity {
+public class Payment extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"student",
+			"paymentNumber",
+			"paymentDate"
+	);
 
 	@Id
 	@GeneratedValue
@@ -36,10 +43,6 @@ public class Payment extends BaseEntity {
 
 	@Column(name = "payment_number", nullable = false)
 	private Integer paymentNumber;
-
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_state", nullable = false)
-	private State state;
 
 	@Column(name = "payment_date")
 	private LocalDate paymentDate;
@@ -68,19 +71,21 @@ public class Payment extends BaseEntity {
 		this.paymentNumber = paymentNumber;
 	}
 
-	public State getState() {
-		return state;
-	}
-
-	public void setState(State state) {
-		this.state = state;
-	}
-
 	public LocalDate getPaymentDate() {
 		return paymentDate;
 	}
 
 	public void setPaymentDate(LocalDate paymentDate) {
 		this.paymentDate = paymentDate;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

@@ -65,7 +65,18 @@ public class DatabaseSeeder implements CommandLineRunner {
 	}
 
 	private void seedStates() {
-		seedState("PAYMENT", "PENDING", "Pendiente", "Pago pendiente de voucher validado");
+		seedState("VOUCHER", "UPLOADED", "Cargado", "Voucher cargado por el estudiante y pendiente de revisión");
+		seedState("VOUCHER", "VALIDATED", "Validado", "Voucher validado por administración");
+		seedState("VOUCHER", "OBSERVED", "Observado", "Voucher observado y pendiente de corrección");
+		seedState("VOUCHER", "REJECTED", "Rechazado", "Voucher rechazado por administración");
+
+		seedState("ENROLLMENT", "ENROLLED", "Matriculado", "Matrícula activa del estudiante en el curso");
+		seedState("ENROLLMENT", "WITHDRAWN", "Retirado", "Matrícula retirada por el estudiante o administración");
+		seedState("ENROLLMENT", "CANCELLED", "Anulado", "Matrícula anulada");
+
+		seedState("GRADE", "REGISTERED", "Registrada", "Nota registrada");
+		seedState("GRADE", "MODIFIED", "Modificada", "Nota modificada");
+		seedState("GRADE", "CANCELLED", "Anulada", "Nota anulada");
 	}
 
 	private void seedState(String entityType, String code, String name, String description) {

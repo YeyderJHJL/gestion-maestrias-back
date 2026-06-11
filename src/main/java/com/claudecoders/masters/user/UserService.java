@@ -9,8 +9,6 @@ import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.shared.security.UserAccountService;
-import com.claudecoders.masters.state.State;
-import com.claudecoders.masters.state.StateRepository;
 import com.claudecoders.masters.student.Student;
 import com.claudecoders.masters.student.StudentRepository;
 import com.claudecoders.masters.student.StudentStatus;
@@ -36,7 +34,6 @@ public class UserService {
 	private final StudentRepository studentRepository;
 	private final StoredFileService storedFileService;
 	private final ProgramRepository programRepository;
-	private final StateRepository stateRepository;
 	private final PaymentRepository paymentRepository;
 
 	public UserService(
@@ -46,7 +43,6 @@ public class UserService {
 			StudentRepository studentRepository,
 			StoredFileService storedFileService,
 			ProgramRepository programRepository,
-			StateRepository stateRepository,
 			PaymentRepository paymentRepository
 	) {
 		this.userRepository = userRepository;
@@ -55,7 +51,6 @@ public class UserService {
 		this.studentRepository = studentRepository;
 		this.storedFileService = storedFileService;
 		this.programRepository = programRepository;
-		this.stateRepository = stateRepository;
 		this.paymentRepository = paymentRepository;
 	}
 
@@ -218,14 +213,11 @@ public class UserService {
 	private void createInitialPayments(Student student) {
 		Program program = programRepository.findFirstByOrderByIdAsc()
 				.orElseThrow(() -> new BusinessException("Debe existir un programa configurado para generar pagos"));
-		State pendingState = stateRepository.findByEntityTypeAndCode("PAYMENT", "PENDING")
-				.orElseThrow(() -> new BusinessException("Debe existir el estado PAYMENT/PENDING para generar pagos"));
 
 		for (int number = 1; number <= program.getPensionCount(); number++) {
 			Payment payment = new Payment();
 			payment.setStudent(student);
 			payment.setPaymentNumber(number);
-			payment.setState(pendingState);
 			paymentRepository.save(payment);
 		}
 	}

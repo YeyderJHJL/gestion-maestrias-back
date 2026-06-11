@@ -1,6 +1,7 @@
 package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
@@ -25,7 +27,17 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "courses")
 @SQLDelete(sql = "UPDATE courses SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Course extends BaseEntity {
+public class Course extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"code",
+			"name",
+			"type",
+			"startDate",
+			"endDate",
+			"observations",
+			"syllabusFile"
+	);
 
 	@Id
 	@GeneratedValue
@@ -119,5 +131,15 @@ public class Course extends BaseEntity {
 
 	public void setSyllabusFile(StoredFile syllabusFile) {
 		this.syllabusFile = syllabusFile;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

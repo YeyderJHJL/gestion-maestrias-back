@@ -56,6 +56,8 @@ Usar `Style.VERSION_7` (time-ordered). Nunca `@GeneratedValue(strategy = Generat
 **PKs de tablas append-only** (`audit_logs`, `notifications`): `Long` con `GenerationType.IDENTITY`.
 **`assignments`**: `Long` con `GenerationType.IDENTITY` + índice único parcial `(id_course, id_teacher, id_semester) WHERE deleted_at IS NULL`.
 
+Las entidades auditables implementan `Auditable`. `getAuditId()` devuelve `Object` para soportar PKs UUID y numéricas; `audit_logs.id_entity` almacena el valor como texto.
+
 ## Soft delete
 
 En toda entidad que tiene `deleted_at`:

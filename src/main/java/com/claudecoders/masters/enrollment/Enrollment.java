@@ -3,6 +3,7 @@ package com.claudecoders.masters.enrollment;
 import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.semester.Semester;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
@@ -15,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -25,7 +27,17 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Table(name = "enrollments")
 @SQLDelete(sql = "UPDATE enrollments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Enrollment extends BaseEntity {
+public class Enrollment extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"student",
+			"course",
+			"semester",
+			"state",
+			"enrollmentDate",
+			"resolutionFile",
+			"observations"
+	);
 
 	@Id
 	@GeneratedValue
@@ -121,5 +133,15 @@ public class Enrollment extends BaseEntity {
 
 	public void setObservations(String observations) {
 		this.observations = observations;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

@@ -2,6 +2,7 @@ package com.claudecoders.masters.assignment;
 
 import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.semester.Semester;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.teacher.Teacher;
 import jakarta.persistence.Column;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -21,7 +23,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "assignments")
 @SQLDelete(sql = "UPDATE assignments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Assignment extends BaseEntity {
+public class Assignment extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"course",
+			"teacher",
+			"semester",
+			"assignmentDate"
+	);
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -81,5 +90,15 @@ public class Assignment extends BaseEntity {
 
 	public void setAssignmentDate(LocalDate assignmentDate) {
 		this.assignmentDate = assignmentDate;
+	}
+
+	@Override
+	public Long getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

@@ -38,7 +38,7 @@ public class AuditLogService {
 		AuditLog auditLog = new AuditLog();
 		auditLog.setUser(actor);
 		auditLog.setEntityType(event.entityType());
-		auditLog.setEntityId(event.entityId());
+		auditLog.setEntityId(String.valueOf(event.entityId()));
 		auditLog.setAction(event.action().name());
 		auditLog.setOldValue(event.oldValues().isEmpty() ? null : objectMapper.valueToTree(event.oldValues()));
 		auditLog.setNewValue(event.newValues().isEmpty() ? null : objectMapper.valueToTree(event.newValues()));

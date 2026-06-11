@@ -1,6 +1,7 @@
 package com.claudecoders.masters.grade;
 
 import com.claudecoders.masters.enrollment.Enrollment;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import jakarta.persistence.Column;
@@ -12,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -22,7 +24,13 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Table(name = "grades")
 @SQLDelete(sql = "UPDATE grades SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Grade extends BaseEntity {
+public class Grade extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"enrollment",
+			"state",
+			"value"
+	);
 
 	@Id
 	@GeneratedValue
@@ -71,5 +79,15 @@ public class Grade extends BaseEntity {
 
 	public void setValue(Short value) {
 		this.value = value;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

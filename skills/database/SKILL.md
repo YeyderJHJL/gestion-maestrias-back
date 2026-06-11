@@ -126,6 +126,8 @@ CREATE TABLE stored_files (
 
 En tablas con auditoría completa, `created_at`, `updated_at` y `deleted_at` deben ser las últimas columnas físicas, en ese orden. Si una migración agrega columnas de negocio a una tabla existente y el orden físico importa, no basta con `ALTER TABLE ... ADD COLUMN` porque PostgreSQL las agrega al final; reconstruir la tabla en una migración nueva, copiar datos, renombrar y recrear constraints/índices.
 
+`audit_logs.id_entity` se almacena como texto para soportar entidades con PK UUID y numérica (`assignments.id` es BIGINT). Al consultar auditoría, filtrar por `entity_type` + `id_entity` como string.
+
 ## Patrones de query
 
 **Relación simple** — `@SQLRestriction` aplica automáticamente:

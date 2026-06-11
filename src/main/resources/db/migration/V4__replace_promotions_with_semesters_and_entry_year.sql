@@ -16,6 +16,9 @@ CREATE UNIQUE INDEX uq_semesters_year_code
 CREATE INDEX idx_semesters_year
     ON semesters(year) WHERE deleted_at IS NULL;
 
+ALTER TABLE audit_logs
+    ALTER COLUMN id_entity TYPE VARCHAR(100) USING id_entity::text;
+
 INSERT INTO semesters(year, code)
 SELECT EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER, 'MIGRADO'
 WHERE EXISTS (SELECT 1 FROM assignments)
@@ -178,7 +181,6 @@ CREATE TABLE payments_new (
     id              UUID        NOT NULL,
     id_student      UUID        NOT NULL,
     payment_number  INTEGER     NOT NULL,
-    id_state        INTEGER     NOT NULL,
     payment_date    DATE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -189,7 +191,6 @@ INSERT INTO payments_new (
     id,
     id_student,
     payment_number,
-    id_state,
     payment_date,
     created_at,
     updated_at,
@@ -199,7 +200,6 @@ SELECT
     pay.id,
     pay.id_student,
     pen.number,
-    pay.id_state,
     pay.payment_date,
     pay.created_at,
     pay.updated_at,
@@ -378,8 +378,7 @@ ALTER TABLE courses
 ALTER TABLE payments
     ADD CONSTRAINT payments_pkey PRIMARY KEY (id),
     ADD CONSTRAINT chk_payments_payment_number CHECK (payment_number > 0),
-    ADD CONSTRAINT fk_payments_student FOREIGN KEY (id_student) REFERENCES students(id),
-    ADD CONSTRAINT fk_payments_state FOREIGN KEY (id_state) REFERENCES states(id);
+    ADD CONSTRAINT fk_payments_student FOREIGN KEY (id_student) REFERENCES students(id);
 
 ALTER TABLE enrollments
     ADD CONSTRAINT enrollments_pkey PRIMARY KEY (id),
