@@ -4,6 +4,7 @@ import com.claudecoders.masters.assignment.dto.AssignmentRequest;
 import com.claudecoders.masters.assignment.dto.AssignmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,30 @@ public class AssignmentController {
 	@GetMapping
 	public ApiResponse<List<AssignmentResponse>> findAll() {
 		return ApiResponse.ok(assignmentService.findAll());
+	}
+
+	@Operation(summary = "List assignments by course")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
+		description = "List assignments for a course (only ADMIN and COORDINATOR can access)")
+	@GetMapping("/courses/{courseId}")
+	public ApiResponse<List<AssignmentResponse>> findByCourse(@PathVariable UUID courseId) {
+		return ApiResponse.ok(assignmentService.findByCourse(courseId));
+	}
+
+	@Operation(summary = "List assignments by teacher")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
+		description = "List assignments for a teacher (only ADMIN and COORDINATOR can access)")
+	@GetMapping("/teachers/{teacherId}")
+	public ApiResponse<List<AssignmentResponse>> findByTeacher(@PathVariable UUID teacherId) {
+		return ApiResponse.ok(assignmentService.findByTeacher(teacherId));
+	}
+
+	@Operation(summary = "List current authenticated teacher's assignments")
+	@Authorize(roles = { UserRole.TEACHER },
+		description = "List the assignments (assigned courses) of the current authenticated teacher")
+	@GetMapping("/me")
+	public ApiResponse<List<AssignmentResponse>> findMine() {
+		return ApiResponse.ok(assignmentService.findByCurrentTeacher(SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "Get assignment by course, teacher and semester")

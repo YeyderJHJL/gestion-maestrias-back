@@ -1,12 +1,16 @@
 package com.claudecoders.masters.teacher;
 
+import com.claudecoders.masters.assignment.AssignmentService;
+import com.claudecoders.masters.assignment.dto.AssignmentResponse;
 import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.teacher.dto.TeacherBulkRequest;
 import com.claudecoders.masters.teacher.dto.TeacherPatchRequest;
 import com.claudecoders.masters.teacher.dto.TeacherRequest;
 import com.claudecoders.masters.teacher.dto.TeacherResponse;
+import com.claudecoders.masters.teacher.dto.TeacherStatusRequest;
 import com.claudecoders.masters.teacher.dto.TeacherImportResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,9 +38,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TeacherController {
 
 	private final TeacherService teacherService;
+	private final AssignmentService assignmentService;
 
-	public TeacherController(TeacherService teacherService) {
+	public TeacherController(TeacherService teacherService, AssignmentService assignmentService) {
 		this.teacherService = teacherService;
+		this.assignmentService = assignmentService;
 	}
 
 	@Operation(summary = "List teachers with optional filters")
@@ -97,6 +103,33 @@ public class TeacherController {
 	@PatchMapping("/{id}")
 	public ApiResponse<TeacherResponse> patch(@PathVariable UUID id, @Valid @RequestBody TeacherPatchRequest request) {
 		return ApiResponse.ok(teacherService.patch(id, request), "Teacher updated");
+	}
+
+	@Operation(summary = "Change teacher status (active/inactive)")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Activate or deactivate the user account of a teacher (only ADMIN)")
+	@PatchMapping("/{id}/status")
+	public ApiResponse<TeacherResponse> changeStatus(
+			@PathVariable UUID id,
+			@Valid @RequestBody TeacherStatusRequest request
+	) {
+		return ApiResponse.ok(teacherService.changeStatus(id, request.active()), "Teacher status updated");
+	}
+
+	@Operation(summary = "List assignments (assigned courses) of a teacher")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR },
+			description = "List assignments of a teacher (only ADMIN and COORDINATOR)")
+	@GetMapping("/{id}/assignments")
+	public ApiResponse<List<AssignmentResponse>> findAssignments(@PathVariable UUID id) {
+		return ApiResponse.ok(assignmentService.findByTeacher(id));
+	}
+
+	@Operation(summary = "List assignments (assigned courses) of the current authenticated teacher")
+	@Authorize(roles = { UserRole.TEACHER },
+			description = "List assignments of the current authenticated teacher")
+	@GetMapping("/me/assignments")
+	public ApiResponse<List<AssignmentResponse>> findMyAssignments() {
+		return ApiResponse.ok(assignmentService.findByCurrentTeacher(SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "Delete teacher")

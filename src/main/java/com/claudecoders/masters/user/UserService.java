@@ -122,6 +122,17 @@ public class UserService {
 		return findEntity(id);
 	}
 
+	@Transactional
+	public UserResponse setActive(UUID id, boolean active) {
+		User user = findEntity(id);
+		if (user.getActive() == null || user.getActive() != active) {
+			user.setActive(active);
+			userAccountService.evictUser(user.getGoogleSub());
+			userRepository.save(user);
+		}
+		return toResponse(user);
+	}
+
 	@Transactional(readOnly = true)
 	public boolean existsByEmail(String email) {
 		return userRepository.existsByEmail(email);
