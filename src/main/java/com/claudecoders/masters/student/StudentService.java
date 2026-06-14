@@ -38,6 +38,21 @@ public class StudentService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<StudentResponse> search(Integer yearPromotion, StudentStatus status, String search) {
+		String normalized = (search == null || search.isBlank()) ? null : search.trim();
+		return studentRepository.search(yearPromotion, status, normalized).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<StudentResponse> findByPromotion(Integer yearPromotion) {
+		return studentRepository.findByYearPromotionOrderByUser_LastNameAscUser_FirstNameAsc(yearPromotion).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public StudentResponse findById(UUID id) {
 		return toResponse(findEntity(id));
 	}
@@ -64,6 +79,19 @@ public class StudentService {
 	}
 
 	@Transactional
+	public StudentResponse changeStatus(UUID id, StudentStatus status, Boolean active) {
+		Student student = findEntity(id);
+		if (status != null) {
+			student.setStatus(status);
+			studentRepository.save(student);
+		}
+		if (active != null) {
+			userService.setActive(student.getUser().getId(), active);
+		}
+		return toResponse(findEntity(id));
+	}
+
+	@Transactional
 	public void delete(UUID id) {
 		studentRepository.delete(findEntity(id));
 	}
@@ -82,6 +110,14 @@ public class StudentService {
 		User user = userService.getReference(request.userId());
 		if (user.getRole() != UserRole.STUDENT) {
 			throw new BusinessException("El usuario debe tener rol ESTUDIANTE");
+		}
+		boolean cuiChanged = !request.cui().equals(student.getCui());
+		boolean paymentCodeChanged = !request.paymentCode().equals(student.getPaymentCode());
+		if (cuiChanged && studentRepository.existsByCui(request.cui())) {
+			throw new BusinessException("Ya existe un estudiante con el CUI " + request.cui());
+		}
+		if (paymentCodeChanged && studentRepository.existsByPaymentCode(request.paymentCode())) {
+			throw new BusinessException("Ya existe un estudiante con el codigo de pago " + request.paymentCode());
 		}
 		student.setUser(user);
 		student.setYearPromotion(request.yearPromotion());

@@ -101,6 +101,15 @@ public class AssignmentService {
             .toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<AssignmentResponse> findByCurrentTeacher(UUID userId) {
+		Teacher teacher = teacherService.getEntityByUserId(userId);
+		return assignmentRepository.findByTeacher_IdOrderByAssignmentDateAsc(teacher.getId())
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
 	private Assignment findEntity(UUID courseId, UUID teacherId, Integer semesterId) {
 		return assignmentRepository.findByCourse_IdAndTeacher_IdAndSemester_Id(courseId, teacherId, semesterId)
 				.orElseThrow(() -> new ResourceNotFoundException("Assignment", "%s/%s/%s".formatted(courseId, teacherId, semesterId)));

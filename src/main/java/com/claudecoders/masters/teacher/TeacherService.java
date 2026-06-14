@@ -145,6 +145,23 @@ public class TeacherService {
 		return findEntity(id);
 	}
 
+	@Transactional(readOnly = true)
+	public Teacher getEntityByUserId(UUID userId) {
+		return teacherRepository.findByUser_Id(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Teacher for user", userId));
+	}
+
+	@Transactional
+	public TeacherResponse changeStatus(UUID id, boolean active) {
+		Teacher teacher = findEntity(id);
+		User user = teacher.getUser();
+		if (user.getActive() != null && user.getActive() == active) {
+			return toResponse(teacher);
+		}
+		userService.setActive(user.getId(), active);
+		return toResponse(findEntity(id));
+	}
+
 	private Teacher findEntity(UUID id) {
 		return teacherRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Teacher", id));
