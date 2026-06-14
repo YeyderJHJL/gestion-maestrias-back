@@ -4,17 +4,19 @@ import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
+import com.claudecoders.masters.student.dto.StudentBulkRequest;
 import com.claudecoders.masters.student.dto.StudentImportResponse;
 import com.claudecoders.masters.student.dto.StudentRequest;
 import com.claudecoders.masters.student.dto.StudentResponse;
 import com.claudecoders.masters.student.dto.StudentStatusRequest;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Students", description = "Student management")
 @RestController
@@ -120,12 +121,14 @@ public class StudentController {
 		return ApiResponse.ok(null, "Student deleted");
 	}
 
-	@Operation(summary = "Import students from an Excel file (RF-MA-18)")
+	@Operation(summary = "Bulk import students from JSON (RF-MA-18)")
 	@Authorize(roles = {UserRole.ADMIN},
-		description = "Bulk-import students from .xlsx/.xls into a past promotion (only ADMIN)")
-	@PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiResponse<StudentImportResponse>> importFromExcel(@RequestParam MultipartFile file) {
-		StudentImportResponse summary = studentImportService.importFromExcel(file);
+		description = "Bulk-import students from a JSON list (frontend pre-processes the Excel).")
+	@PostMapping("/bulk")
+	public ResponseEntity<ApiResponse<StudentImportResponse>> importFromJson(
+			@Valid @Size(min = 1) @RequestBody List<@NotNull @Valid StudentBulkRequest> items
+	) {
+		StudentImportResponse summary = studentImportService.importFromJson(items);
 		String message = "Imported %d, rejected %d (total %d)".formatted(
 				summary.imported(), summary.rejected(), summary.totalRows());
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.ok(summary, message));

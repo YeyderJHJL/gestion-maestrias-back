@@ -1,40 +1,29 @@
 package com.claudecoders.masters.student;
 
+import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.payment.PaymentRepository;
 import com.claudecoders.masters.program.Program;
 import com.claudecoders.masters.program.ProgramRepository;
 import com.claudecoders.masters.shared.enums.UserRole;
 import com.claudecoders.masters.shared.exception.BusinessException;
+import com.claudecoders.masters.student.dto.StudentBulkRequest;
 import com.claudecoders.masters.student.dto.StudentImportResponse;
 import com.claudecoders.masters.student.dto.StudentImportRowResult;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.user.UserRepository;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
-import org.apache.poi.EncryptedDocumentException;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class StudentImportService {
@@ -45,38 +34,11 @@ public class StudentImportService {
 	private static final Pattern DNI_PATTERN = Pattern.compile("^\\d{8}$");
 	private static final Pattern CUI_PATTERN = Pattern.compile("^\\d{6,12}$");
 
-	private static final Map<String, String> COLUMN_ALIASES = Map.of(
-			"email", "email",
-			"correo", "email",
-			"firstname", "firstName",
-			"nombres", "firstName",
-			"nombre", "firstName",
-			"lastname", "lastName",
-			"apellidos", "lastName",
-			"apellido", "lastName"
-	);
-
-	private static final Map<String, String> EXTRA_ALIASES = Map.ofEntries(
-			Map.entry("dni", "dni"),
-			Map.entry("cui", "cui"),
-			Map.entry("yearpromotion", "yearPromotion"),
-			Map.entry("aniopromocion", "yearPromotion"),
-			Map.entry("anopromocion", "yearPromotion"),
-			Map.entry("promocion", "yearPromotion"),
-			Map.entry("paymentcode", "paymentCode"),
-			Map.entry("codigopago", "paymentCode"),
-			Map.entry("codigodepago", "paymentCode"),
-			Map.entry("phone", "phone"),
-			Map.entry("telefono", "phone"),
-			Map.entry("celular", "phone"),
-			Map.entry("status", "status"),
-			Map.entry("estado", "status")
-	);
-
 	private final StudentRepository studentRepository;
 	private final UserRepository userRepository;
 	private final ProgramRepository programRepository;
 	private final PaymentRepository paymentRepository;
+	private final StoredFileService storedFileService;
 	private final TransactionTemplate transactionTemplate;
 
 	public StudentImportService(
@@ -84,23 +46,21 @@ public class StudentImportService {
 			UserRepository userRepository,
 			ProgramRepository programRepository,
 			PaymentRepository paymentRepository,
+			StoredFileService storedFileService,
 			PlatformTransactionManager transactionManager
 	) {
 		this.studentRepository = studentRepository;
 		this.userRepository = userRepository;
 		this.programRepository = programRepository;
 		this.paymentRepository = paymentRepository;
+		this.storedFileService = storedFileService;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
 
-	public StudentImportResponse importFromExcel(MultipartFile file) {
-		if (file == null || file.isEmpty()) {
-			throw new BusinessException("El archivo Excel es obligatorio");
-		}
-		String name = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase(Locale.ROOT);
-		if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-			throw new BusinessException("El archivo debe tener extension .xlsx o .xls");
+	public StudentImportResponse importFromJson(List<StudentBulkRequest> items) {
+		if (items == null || items.isEmpty()) {
+			throw new BusinessException("Debe enviar al menos un estudiante");
 		}
 
 		Program program = programRepository.findFirstByOrderByIdAsc()
@@ -114,81 +74,41 @@ public class StudentImportService {
 		int imported = 0;
 		int rejected = 0;
 
-		try (InputStream in = file.getInputStream();
-				Workbook workbook = WorkbookFactory.create(in)) {
+		for (int i = 0; i < items.size(); i++) {
+			ParsedRow parsed = toParsedRow(items.get(i));
+			int rowNumber = i + 1;
+			List<String> observations = new ArrayList<>();
+			validateRow(parsed, observations, seenEmails, seenDnis, seenCuis, seenPaymentCodes);
 
-			Sheet sheet = workbook.getSheetAt(0);
-			if (sheet == null) {
-				throw new BusinessException("El archivo Excel no contiene hojas");
+			if (!observations.isEmpty()) {
+				rejected++;
+				results.add(new StudentImportRowResult(
+						rowNumber, parsed.email, parsed.dni, parsed.cui, parsed.yearPromotion,
+						StudentImportRowResult.Status.REJECTED, null, observations));
+				continue;
 			}
-			Row headerRow = sheet.getRow(sheet.getFirstRowNum());
-			if (headerRow == null) {
-				throw new BusinessException("El archivo Excel no tiene fila de cabecera");
+
+			try {
+				Student saved = transactionTemplate.execute(status -> persistStudent(parsed, program));
+				seenEmails.add(parsed.email.toLowerCase(Locale.ROOT));
+				if (parsed.dni != null) {
+					seenDnis.add(parsed.dni);
+				}
+				seenCuis.add(parsed.cui);
+				seenPaymentCodes.add(parsed.paymentCode);
+				imported++;
+				results.add(new StudentImportRowResult(
+						rowNumber, parsed.email, parsed.dni, parsed.cui, parsed.yearPromotion,
+						StudentImportRowResult.Status.IMPORTED,
+						saved == null ? null : saved.getId(),
+						List.of()));
+			} catch (RuntimeException ex) {
+				rejected++;
+				results.add(new StudentImportRowResult(
+						rowNumber, parsed.email, parsed.dni, parsed.cui, parsed.yearPromotion,
+						StudentImportRowResult.Status.REJECTED, null,
+						List.of("Error al guardar: " + rootMessage(ex))));
 			}
-			Map<String, Integer> columns = resolveColumns(headerRow);
-			validateRequiredColumns(columns);
-
-			DataFormatter formatter = new DataFormatter();
-			int lastRow = sheet.getLastRowNum();
-			for (int rowIdx = headerRow.getRowNum() + 1; rowIdx <= lastRow; rowIdx++) {
-				Row row = sheet.getRow(rowIdx);
-				if (row == null || isBlankRow(row, formatter)) {
-					continue;
-				}
-				ParsedRow parsed = parseRow(row, columns, formatter);
-				List<String> observations = new ArrayList<>();
-				validateRow(parsed, observations, seenEmails, seenDnis, seenCuis, seenPaymentCodes);
-
-				if (!observations.isEmpty()) {
-					rejected++;
-					results.add(new StudentImportRowResult(
-							rowIdx + 1,
-							parsed.email,
-							parsed.dni,
-							parsed.cui,
-							parsed.yearPromotion,
-							StudentImportRowResult.Status.REJECTED,
-							null,
-							observations
-					));
-					continue;
-				}
-
-				try {
-					Student saved = transactionTemplate.execute(status -> persistStudent(parsed, program));
-					seenEmails.add(parsed.email.toLowerCase(Locale.ROOT));
-					if (parsed.dni != null) {
-						seenDnis.add(parsed.dni);
-					}
-					seenCuis.add(parsed.cui);
-					seenPaymentCodes.add(parsed.paymentCode);
-					imported++;
-					results.add(new StudentImportRowResult(
-							rowIdx + 1,
-							parsed.email,
-							parsed.dni,
-							parsed.cui,
-							parsed.yearPromotion,
-							StudentImportRowResult.Status.IMPORTED,
-							saved == null ? null : saved.getId(),
-							List.of()
-					));
-				} catch (RuntimeException ex) {
-					rejected++;
-					results.add(new StudentImportRowResult(
-							rowIdx + 1,
-							parsed.email,
-							parsed.dni,
-							parsed.cui,
-							parsed.yearPromotion,
-							StudentImportRowResult.Status.REJECTED,
-							null,
-							List.of("Error al guardar: " + rootMessage(ex))
-					));
-				}
-			}
-		} catch (IOException | EncryptedDocumentException ex) {
-			throw new BusinessException("No se pudo leer el archivo Excel: " + ex.getMessage());
 		}
 
 		return new StudentImportResponse(results.size(), imported, rejected, results);
@@ -211,6 +131,9 @@ public class StudentImportService {
 		student.setCui(parsed.cui);
 		student.setPaymentCode(parsed.paymentCode);
 		student.setPhone(parsed.phone);
+		if (parsed.reactualizationFileId != null) {
+			student.setReactualizationFile(storedFileService.getReference(parsed.reactualizationFileId));
+		}
 		Student savedStudent = studentRepository.save(student);
 
 		for (int number = 1; number <= program.getPensionCount(); number++) {
@@ -297,139 +220,26 @@ public class StudentImportService {
 		}
 	}
 
-	private Map<String, Integer> resolveColumns(Row headerRow) {
-		Map<String, Integer> columns = new HashMap<>();
-		Map<String, String> dictionary = new HashMap<>();
-		dictionary.putAll(COLUMN_ALIASES);
-		dictionary.putAll(EXTRA_ALIASES);
-
-		DataFormatter formatter = new DataFormatter();
-		for (Cell cell : headerRow) {
-			String raw = formatter.formatCellValue(cell);
-			String key = normalizeHeader(raw);
-			String fieldName = dictionary.get(key);
-			if (fieldName != null && !columns.containsKey(fieldName)) {
-				columns.put(fieldName, cell.getColumnIndex());
-			}
-		}
-		return columns;
-	}
-
-	private void validateRequiredColumns(Map<String, Integer> columns) {
-		List<String> required = Arrays.asList(
-				"email", "firstName", "lastName", "dni", "cui", "yearPromotion", "paymentCode");
-		List<String> missing = required.stream().filter(c -> !columns.containsKey(c)).toList();
-		if (!missing.isEmpty()) {
-			throw new BusinessException("Faltan columnas obligatorias en el Excel: " + String.join(", ", missing));
-		}
-	}
-
-	private ParsedRow parseRow(Row row, Map<String, Integer> columns, DataFormatter formatter) {
+	private ParsedRow toParsedRow(StudentBulkRequest item) {
 		ParsedRow parsed = new ParsedRow();
-		parsed.email = trimToNull(readString(row, columns.get("email"), formatter));
-		parsed.firstName = trimToNull(readString(row, columns.get("firstName"), formatter));
-		parsed.lastName = trimToNull(readString(row, columns.get("lastName"), formatter));
-		parsed.dni = trimToNull(readString(row, columns.get("dni"), formatter));
-		parsed.cui = trimToNull(readString(row, columns.get("cui"), formatter));
-		parsed.paymentCode = trimToNull(readString(row, columns.get("paymentCode"), formatter));
-		parsed.phone = trimToNull(readString(row, columns.get("phone"), formatter));
-		parsed.yearPromotion = readInteger(row, columns.get("yearPromotion"), formatter);
-
-		Integer statusIdx = columns.get("status");
-		if (statusIdx != null) {
-			String statusValue = trimToNull(readString(row, statusIdx, formatter));
-			if (statusValue != null) {
-				try {
-					parsed.status = StudentStatus.valueOf(statusValue.toUpperCase(Locale.ROOT));
-				} catch (IllegalArgumentException ex) {
-					parsed.statusError = "Estado no reconocido: " + statusValue;
-				}
-			}
+		parsed.email = trim(item.email());
+		parsed.firstName = trim(item.firstName());
+		parsed.lastName = trim(item.lastName());
+		parsed.dni = trim(item.dni());
+		parsed.cui = trim(item.cui());
+		parsed.paymentCode = trim(item.paymentCode());
+		parsed.phone = trim(item.phone());
+		parsed.yearPromotion = item.yearPromotion();
+		parsed.status = item.status();
+		parsed.reactualizationFileId = item.reactualizationFileId();
+		if (parsed.status == StudentStatus.REACTUALIZATION && parsed.reactualizationFileId == null) {
+			parsed.statusError = "Estudiantes recursantes requieren reactualizationFileId";
 		}
 		return parsed;
 	}
 
-	private String readString(Row row, Integer index, DataFormatter formatter) {
-		if (index == null) {
-			return null;
-		}
-		Cell cell = row.getCell(index);
-		if (cell == null) {
-			return null;
-		}
-		if (cell.getCellType() == CellType.NUMERIC) {
-			double numeric = cell.getNumericCellValue();
-			if (numeric == Math.floor(numeric) && !Double.isInfinite(numeric)) {
-				return Long.toString((long) numeric);
-			}
-		}
-		return formatter.formatCellValue(cell);
-	}
-
-	private Integer readInteger(Row row, Integer index, DataFormatter formatter) {
-		if (index == null) {
-			return null;
-		}
-		Cell cell = row.getCell(index);
-		if (cell == null) {
-			return null;
-		}
-		if (cell.getCellType() == CellType.NUMERIC) {
-			return (int) cell.getNumericCellValue();
-		}
-		String value = trimToNull(formatter.formatCellValue(cell));
-		if (value == null) {
-			return null;
-		}
-		try {
-			return Integer.valueOf(value.replace(",", "").trim());
-		} catch (NumberFormatException ex) {
-			try {
-				return (int) Double.parseDouble(value);
-			} catch (NumberFormatException ignored) {
-				return null;
-			}
-		}
-	}
-
-	private boolean isBlankRow(Row row, DataFormatter formatter) {
-		for (Cell cell : row) {
-			if (trimToNull(formatter.formatCellValue(cell)) != null) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	private static String normalizeHeader(String raw) {
-		if (raw == null) {
-			return "";
-		}
-		String lower = raw.toLowerCase(Locale.ROOT).trim();
-		StringBuilder builder = new StringBuilder(lower.length());
-		for (int i = 0; i < lower.length(); i++) {
-			char c = lower.charAt(i);
-			if (Character.isLetterOrDigit(c)) {
-				builder.append(switch (c) {
-					case 'á' -> 'a';
-					case 'é' -> 'e';
-					case 'í' -> 'i';
-					case 'ó' -> 'o';
-					case 'ú', 'ü' -> 'u';
-					case 'ñ' -> 'n';
-					default -> c;
-				});
-			}
-		}
-		return builder.toString();
-	}
-
-	private static String trimToNull(String value) {
-		if (value == null) {
-			return null;
-		}
-		String trimmed = value.trim();
-		return trimmed.isEmpty() ? null : trimmed;
+	private static String trim(String value) {
+		return value == null ? null : value.trim();
 	}
 
 	private static boolean isBlank(String value) {
@@ -455,5 +265,6 @@ public class StudentImportService {
 		Integer yearPromotion;
 		StudentStatus status;
 		String statusError;
+		UUID reactualizationFileId;
 	}
 }
