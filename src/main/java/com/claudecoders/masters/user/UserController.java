@@ -112,14 +112,14 @@ public class UserController {
 		return ApiResponse.ok(userService.findAll());
 	}
 
-	@Operation(summary = "Get user by id")
+	@Operation(summary = "Get user by id with role-specific profile")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
-			description = "Get user by id (only ADMIN and COORDINATOR can access)")
+			description = "Get user by id and teacher/student profile when applicable (only ADMIN and COORDINATOR can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@GetMapping("/{id}")
-	public ApiResponse<UserResponse> findById(@PathVariable UUID id) {
-		return ApiResponse.ok(userService.findById(id));
+	public ApiResponse<UserProfileResponse> findById(@PathVariable UUID id) {
+		return ApiResponse.ok(userService.findProfileById(id));
 	}
 
 	@Operation(summary = "Create user with role-specific profile")

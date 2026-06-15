@@ -66,6 +66,11 @@ public class UserService {
 		return toResponse(findEntity(id));
 	}
 
+	@Transactional(readOnly = true)
+	public UserProfileResponse findProfileById(UUID id) {
+		return toProfileResponse(findEntity(id));
+	}
+
 	@Transactional
 	public UserProfileResponse create(UserCreateRequest request) {
 		validateProfileRequest(request);
@@ -308,6 +313,23 @@ public class UserService {
 				student,
 				teacher
 		);
+	}
+
+	private UserProfileResponse toProfileResponse(User user) {
+		StudentProfileResponse student = null;
+		TeacherProfileResponse teacher = null;
+
+		if (user.getRole() == UserRole.STUDENT) {
+			student = studentRepository.findByUser_Id(user.getId())
+					.map(this::toStudentProfileResponse)
+					.orElse(null);
+		} else if (user.getRole() == UserRole.TEACHER) {
+			teacher = teacherRepository.findByUser_Id(user.getId())
+					.map(this::toTeacherProfileResponse)
+					.orElse(null);
+		}
+
+		return toProfileResponse(user, student, teacher);
 	}
 
 	private StudentProfileResponse toStudentProfileResponse(Student student) {
