@@ -6,7 +6,6 @@ import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.student.StudentService;
 import com.claudecoders.masters.teacher.TeacherService;
-import com.claudecoders.masters.user.dto.UserRequest;
 import com.claudecoders.masters.user.dto.UserMeResponse;
 import com.claudecoders.masters.user.dto.UserCreateRequest;
 import com.claudecoders.masters.user.dto.UserProfileResponse;
@@ -134,14 +133,14 @@ public class UserController {
 				.body(ApiResponse.ok(userService.create(request), "Usuario creado correctamente"));
 	}
 
-	@Operation(summary = "Update user")
+	@Operation(summary = "Update user with role-specific profile")
 	@Authorize(roles = {UserRole.ADMIN},
-			description = "Update existing user (only ADMIN can access)")
+			description = "Update existing user and teacher/student profile when applicable (only ADMIN can access)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User updated")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@PutMapping("/{id}")
-	public ApiResponse<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserRequest request) {
-		return ApiResponse.ok(userService.update(id, request), "User updated");
+	public ApiResponse<UserProfileResponse> update(@PathVariable UUID id, @Valid @RequestBody UserCreateRequest request) {
+		return ApiResponse.ok(userService.update(id, request), "Usuario actualizado correctamente");
 	}
 
 	@Operation(summary = "Delete user")

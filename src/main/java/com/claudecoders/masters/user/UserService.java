@@ -68,13 +68,13 @@ public class UserService {
 
 	@Transactional
 	public UserProfileResponse create(UserCreateRequest request) {
-		validateCreateRequest(request);
+		validateProfileRequest(request);
 		if (userRepository.existsByEmail(request.email())) {
 			throw new BusinessException("Ya existe un usuario con el correo " + request.email());
 		}
 
 		User user = new User();
-		applyCreateRequest(user, request);
+		applyRequest(user, request);
 		User savedUser = userRepository.save(user);
 
 		TeacherProfileResponse teacher = null;
@@ -83,6 +83,26 @@ public class UserService {
 			teacher = createTeacher(savedUser, request.teacher());
 		} else if (request.role() == UserRole.STUDENT) {
 			student = createStudent(savedUser, request.student());
+		}
+
+		return toProfileResponse(savedUser, student, teacher);
+	}
+
+	@Transactional
+	public UserProfileResponse update(UUID id, UserCreateRequest request) {
+		validateProfileRequest(request);
+		User user = findEntity(id);
+		userAccountService.evictUser(user.getGoogleSub());
+		applyRequest(user, request);
+		User savedUser = userRepository.save(user);
+		deleteProfilesNotMatchingRole(savedUser.getId(), request.role());
+
+		TeacherProfileResponse teacher = null;
+		StudentProfileResponse student = null;
+		if (request.role() == UserRole.TEACHER) {
+			teacher = upsertTeacher(savedUser, request.teacher());
+		} else if (request.role() == UserRole.STUDENT) {
+			student = upsertStudent(savedUser, request.student());
 		}
 
 		return toProfileResponse(savedUser, student, teacher);
@@ -148,7 +168,7 @@ public class UserService {
 				.orElseThrow(() -> new ResourceNotFoundException("User", id));
 	}
 
-	private void validateCreateRequest(UserCreateRequest request) {
+	private void validateProfileRequest(UserCreateRequest request) {
 		switch (request.role()) {
 			case TEACHER -> {
 				if (request.teacher() == null) {
@@ -174,7 +194,7 @@ public class UserService {
 		}
 	}
 
-	private void applyCreateRequest(User user, UserCreateRequest request) {
+	private void applyRequest(User user, UserCreateRequest request) {
 		user.setEmail(request.email());
 		user.setFirstName(request.firstName());
 		user.setLastName(request.lastName());
@@ -195,6 +215,22 @@ public class UserService {
 	private TeacherProfileResponse createTeacher(User user, UserCreateRequest.TeacherProfileRequest request) {
 		Teacher teacher = new Teacher();
 		teacher.setUser(user);
+		applyTeacherProfile(teacher, request);
+		return toTeacherProfileResponse(teacherRepository.save(teacher));
+	}
+
+	private TeacherProfileResponse upsertTeacher(User user, UserCreateRequest.TeacherProfileRequest request) {
+		Teacher teacher = teacherRepository.findByUser_Id(user.getId())
+				.orElseGet(() -> {
+					Teacher newTeacher = new Teacher();
+					newTeacher.setUser(user);
+					return newTeacher;
+				});
+		applyTeacherProfile(teacher, request);
+		return toTeacherProfileResponse(teacherRepository.save(teacher));
+	}
+
+	private void applyTeacherProfile(Teacher teacher, UserCreateRequest.TeacherProfileRequest request) {
 		teacher.setCategory(request.category());
 		teacher.setRegime(request.regime());
 		teacher.setAcademicDegree(request.academicDegree());
@@ -202,12 +238,27 @@ public class UserService {
 		teacher.setType(request.type());
 		teacher.setPhone(request.phone());
 		teacher.setUniversity(request.university());
-		return toTeacherProfileResponse(teacherRepository.save(teacher));
 	}
 
 	private StudentProfileResponse createStudent(User user, UserCreateRequest.StudentProfileRequest request) {
 		Student student = new Student();
 		student.setUser(user);
+		applyStudentProfile(student, request);
+		Student savedStudent = studentRepository.save(student);
+		createInitialPayments(savedStudent);
+		return toStudentProfileResponse(savedStudent);
+	}
+
+	private StudentProfileResponse upsertStudent(User user, UserCreateRequest.StudentProfileRequest request) {
+		return studentRepository.findByUser_Id(user.getId())
+				.map(student -> {
+					applyStudentProfile(student, request);
+					return toStudentProfileResponse(studentRepository.save(student));
+				})
+				.orElseGet(() -> createStudent(user, request));
+	}
+
+	private void applyStudentProfile(Student student, UserCreateRequest.StudentProfileRequest request) {
 		student.setYearPromotion(request.yearPromotion());
 		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
 		student.setReactualizationFile(request.reactualizationFileId() == null
@@ -216,9 +267,15 @@ public class UserService {
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());
-		Student savedStudent = studentRepository.save(student);
-		createInitialPayments(savedStudent);
-		return toStudentProfileResponse(savedStudent);
+	}
+
+	private void deleteProfilesNotMatchingRole(UUID userId, UserRole role) {
+		if (role != UserRole.TEACHER) {
+			teacherRepository.findByUser_Id(userId).ifPresent(teacherRepository::delete);
+		}
+		if (role != UserRole.STUDENT) {
+			studentRepository.findByUser_Id(userId).ifPresent(studentRepository::delete);
+		}
 	}
 
 	private void createInitialPayments(Student student) {
