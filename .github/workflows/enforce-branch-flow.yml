@@ -123,6 +123,7 @@ jobs:
 
           {
             echo "message<<EOF"
+            echo "ohño "
             echo "Este PR tiene conflictos con $BASE_BRANCH. Resuelve los conflictos localmente y vuelve a actualizar el PR."
             if [[ -n "$conflicted_files" ]]; then
               echo
