@@ -1,6 +1,7 @@
 package com.claudecoders.masters.voucher;
 
 import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.payment.PaymentService;
@@ -73,7 +74,7 @@ public class VoucherService {
 	private void applyRequest(Voucher voucher, VoucherRequest request) {
 		Payment payment = paymentService.getReference(request.paymentId());
 		State state = stateService.getReference(request.stateId());
-		StoredFile file = storedFileService.getReference(request.fileId());
+		StoredFile file = storedFileService.getReference(request.fileId(), FilePurpose.PAYMENT_VOUCHER);
 		voucher.setPayment(payment);
 		voucher.setState(state);
 		voucher.setFile(file);

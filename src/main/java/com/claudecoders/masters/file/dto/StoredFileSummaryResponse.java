@@ -1,5 +1,6 @@
 package com.claudecoders.masters.file.dto;
 
+import com.claudecoders.masters.file.FilePurpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
@@ -9,6 +10,7 @@ public record StoredFileSummaryResponse(
 		UUID id,
 		String originalName,
 		String contentType,
+		FilePurpose purpose,
 		Long sizeBytes,
 		Instant createdAt
 ) {

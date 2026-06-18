@@ -1,5 +1,6 @@
 package com.claudecoders.masters.student;
 
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
@@ -124,7 +125,7 @@ public class StudentService {
 		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
 		student.setReactualizationFile(request.reactualizationFileId() == null
 				? null
-				: storedFileService.getReference(request.reactualizationFileId()));
+				: storedFileService.getReference(request.reactualizationFileId(), FilePurpose.REACTUALIZATION));
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());

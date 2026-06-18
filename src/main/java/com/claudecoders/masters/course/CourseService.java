@@ -2,6 +2,7 @@ package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.course.dto.CourseRequest;
 import com.claudecoders.masters.course.dto.CourseResponse;
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
@@ -74,7 +75,9 @@ public class CourseService {
 		course.setStartDate(request.startDate());
 		course.setEndDate(request.endDate());
 		course.setObservations(request.observations());
-		course.setSyllabusFile(request.syllabusFileId() == null ? null : storedFileService.getReference(request.syllabusFileId()));
+		course.setSyllabusFile(request.syllabusFileId() == null
+				? null
+				: storedFileService.getReference(request.syllabusFileId(), FilePurpose.SYLLABUS));
 	}
 
 	private CourseResponse toResponse(Course course) {

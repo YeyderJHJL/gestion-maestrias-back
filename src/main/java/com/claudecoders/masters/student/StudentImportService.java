@@ -1,5 +1,6 @@
 package com.claudecoders.masters.student;
 
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.payment.PaymentRepository;
@@ -132,7 +133,10 @@ public class StudentImportService {
 		student.setPaymentCode(parsed.paymentCode);
 		student.setPhone(parsed.phone);
 		if (parsed.reactualizationFileId != null) {
-			student.setReactualizationFile(storedFileService.getReference(parsed.reactualizationFileId));
+			student.setReactualizationFile(storedFileService.getReference(
+					parsed.reactualizationFileId,
+					FilePurpose.REACTUALIZATION
+			));
 		}
 		Student savedStudent = studentRepository.save(student);
 
