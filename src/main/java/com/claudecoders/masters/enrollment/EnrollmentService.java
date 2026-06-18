@@ -4,6 +4,7 @@ import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.course.CourseService;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.semester.Semester;
 import com.claudecoders.masters.semester.SemesterService;
@@ -104,7 +105,9 @@ public class EnrollmentService {
 		enrollment.setSemester(semester);
 		enrollment.setState(state);
 		enrollment.setEnrollmentDate(request.enrollmentDate());
-		enrollment.setResolutionFile(request.resolutionFileId() == null ? null : storedFileService.getReference(request.resolutionFileId()));
+		enrollment.setResolutionFile(request.resolutionFileId() == null
+				? null
+				: storedFileService.getReference(request.resolutionFileId(), FilePurpose.ENROLLMENT_RESOLUTION));
 		enrollment.setObservations(request.observations());
 	}
 

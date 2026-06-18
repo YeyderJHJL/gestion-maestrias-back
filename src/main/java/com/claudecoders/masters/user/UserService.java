@@ -1,5 +1,6 @@
 package com.claudecoders.masters.user;
 
+import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.payment.PaymentRepository;
@@ -268,7 +269,7 @@ public class UserService {
 		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
 		student.setReactualizationFile(request.reactualizationFileId() == null
 				? null
-				: storedFileService.getReference(request.reactualizationFileId()));
+				: storedFileService.getReference(request.reactualizationFileId(), FilePurpose.REACTUALIZATION));
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());
