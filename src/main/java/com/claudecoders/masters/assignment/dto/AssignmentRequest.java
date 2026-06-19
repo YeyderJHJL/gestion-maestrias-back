@@ -10,6 +10,7 @@ public record AssignmentRequest(
 		@NotNull UUID courseId,
 		@NotNull UUID teacherId,
 		@NotNull Integer semesterId,
-		@NotNull LocalDate assignmentDate
+		@NotNull LocalDate assignmentDate,
+		UUID syllabusFileId
 ) {
 }
