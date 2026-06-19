@@ -2,8 +2,6 @@ package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.course.dto.CourseRequest;
 import com.claudecoders.masters.course.dto.CourseResponse;
-import com.claudecoders.masters.file.FilePurpose;
-import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import java.util.List;
@@ -15,14 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseService {
 
 	private final CourseRepository courseRepository;
-	private final StoredFileService storedFileService;
 
-	public CourseService(
-			CourseRepository courseRepository,
-			StoredFileService storedFileService
-	) {
+	public CourseService(CourseRepository courseRepository) {
 		this.courseRepository = courseRepository;
-		this.storedFileService = storedFileService;
 	}
 
 	@Transactional(readOnly = true)
@@ -75,9 +68,6 @@ public class CourseService {
 		course.setStartDate(request.startDate());
 		course.setEndDate(request.endDate());
 		course.setObservations(request.observations());
-		course.setSyllabusFile(request.syllabusFileId() == null
-				? null
-				: storedFileService.getReference(request.syllabusFileId(), FilePurpose.SYLLABUS));
 	}
 
 	private CourseResponse toResponse(Course course) {
@@ -88,7 +78,6 @@ public class CourseService {
 				course.getStartDate(),
 				course.getEndDate(),
 				course.getObservations(),
-				storedFileService.toSummary(course.getSyllabusFile()),
 				course.getCreatedAt(),
 				course.getUpdatedAt()
 		);

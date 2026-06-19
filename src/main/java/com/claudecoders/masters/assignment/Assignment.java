@@ -1,6 +1,7 @@
 package com.claudecoders.masters.assignment;
 
 import com.claudecoders.masters.course.Course;
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.semester.Semester;
 import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
@@ -29,7 +30,8 @@ public class Assignment extends BaseEntity implements Auditable {
 			"course",
 			"teacher",
 			"semester",
-			"assignmentDate"
+			"assignmentDate",
+			"syllabusFile"
 	);
 
 	@Id
@@ -51,6 +53,10 @@ public class Assignment extends BaseEntity implements Auditable {
 
 	@Column(name = "assignment_date", nullable = false)
 	private LocalDate assignmentDate = LocalDate.now();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_syllabus_file")
+	private StoredFile syllabusFile;
 
 	public Long getId() {
 		return id;
@@ -90,6 +96,14 @@ public class Assignment extends BaseEntity implements Auditable {
 
 	public void setAssignmentDate(LocalDate assignmentDate) {
 		this.assignmentDate = assignmentDate;
+	}
+
+	public StoredFile getSyllabusFile() {
+		return syllabusFile;
+	}
+
+	public void setSyllabusFile(StoredFile syllabusFile) {
+		this.syllabusFile = syllabusFile;
 	}
 
 	@Override

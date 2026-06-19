@@ -2,6 +2,7 @@ package com.claudecoders.masters.assignment;
 
 import com.claudecoders.masters.assignment.dto.AssignmentRequest;
 import com.claudecoders.masters.assignment.dto.AssignmentResponse;
+import com.claudecoders.masters.assignment.dto.AssignmentSyllabusRequest;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
@@ -97,6 +98,26 @@ public class AssignmentController {
 			@Valid @RequestBody AssignmentRequest request
 	) {
 		return ApiResponse.ok(assignmentService.update(courseId, teacherId, semesterId, request), "Assignment updated");
+	}
+
+	@Operation(summary = "Update assignment syllabus")
+	@Authorize(roles = { UserRole.TEACHER },
+		description = "Update syllabus file for the current teacher assignment")
+	@PutMapping("/courses/{courseId}/semesters/{semesterId}/syllabus")
+	public ApiResponse<AssignmentResponse> updateSyllabus(
+			@PathVariable UUID courseId,
+			@PathVariable Integer semesterId,
+			@Valid @RequestBody AssignmentSyllabusRequest request
+	) {
+		return ApiResponse.ok(
+				assignmentService.updateCurrentTeacherSyllabus(
+						SecurityHelper.currentUserId(),
+						courseId,
+						semesterId,
+						request.syllabusFileId()
+				),
+				"Silabo actualizado correctamente"
+		);
 	}
 
 	@Operation(summary = "Delete assignment")

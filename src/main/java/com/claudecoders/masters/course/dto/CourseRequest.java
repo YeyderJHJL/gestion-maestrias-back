@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Schema(description = "Course create/update request")
 public record CourseRequest(
@@ -13,7 +12,6 @@ public record CourseRequest(
 		@NotBlank @Size(max = 255) String name,
 		@NotNull LocalDate startDate,
 		@NotNull LocalDate endDate,
-		String observations,
-		UUID syllabusFileId
+		String observations
 ) {
 }
