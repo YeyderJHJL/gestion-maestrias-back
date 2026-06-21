@@ -8,6 +8,7 @@ import com.claudecoders.masters.file.FilePurpose;
 import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.semester.Semester;
 import com.claudecoders.masters.semester.SemesterService;
+import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.state.StateService;
@@ -59,6 +60,9 @@ public class EnrollmentService {
 
 	@Transactional
 	public EnrollmentResponse create(EnrollmentRequest request) {
+		if (enrollmentRepository.existsByStudent_IdAndCourse_Id(request.studentId(), request.courseId())) {
+			throw new BusinessException("El estudiante ya está matriculado en este curso");
+		}
 		Enrollment enrollment = new Enrollment();
 		applyRequest(enrollment, request);
 		return toResponse(enrollmentRepository.save(enrollment));
@@ -88,6 +92,23 @@ public class EnrollmentService {
           .stream()
           .map(this::toResponse)
           .toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByStudent(UUID studentId) {
+		studentService.getReference(studentId); // valida que el estudiante exista
+		return enrollmentRepository.findByStudent_IdOrderByEnrollmentDateAsc(studentId)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByPromotion(Integer yearPromotion) {
+		return enrollmentRepository.findByStudent_YearPromotionOrderByEnrollmentDateAsc(yearPromotion)
+				.stream()
+				.map(this::toResponse)
+				.toList();
 	}
 
 	private Enrollment findEntity(UUID id) {

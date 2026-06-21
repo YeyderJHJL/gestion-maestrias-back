@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Enrollments", description = "Enrollment management")
@@ -32,11 +33,25 @@ public class EnrollmentController {
 		this.enrollmentService = enrollmentService;
 	}
 
-	@Operation(summary = "List enrollments")
-	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT }, 
+	@Operation(summary = "List enrollments",
+		description = "Lists enrollments. Optionally filter by student, course or promotion (year)")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT },
 		description = "List all enrollments (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping
-	public ApiResponse<List<EnrollmentResponse>> findAll() {
+	public ApiResponse<List<EnrollmentResponse>> findAll(
+			@RequestParam(required = false) UUID studentId,
+			@RequestParam(required = false) UUID courseId,
+			@RequestParam(required = false) Integer yearPromotion
+	) {
+		if (studentId != null) {
+			return ApiResponse.ok(enrollmentService.findByStudent(studentId));
+		}
+		if (courseId != null) {
+			return ApiResponse.ok(enrollmentService.findByCourse(courseId));
+		}
+		if (yearPromotion != null) {
+			return ApiResponse.ok(enrollmentService.findByPromotion(yearPromotion));
+		}
 		return ApiResponse.ok(enrollmentService.findAll());
 	}
 
