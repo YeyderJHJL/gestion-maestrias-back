@@ -13,6 +13,7 @@ public record StudentResponse(
 		String email,
 		String firstName,
 		String lastName,
+		String dni,
 		Integer yearPromotion,
 		StudentStatus status,
 		StoredFileSummaryResponse reactualizationFile,

@@ -145,6 +145,7 @@ public class StudentService {
 				user.getEmail(),
 				user.getFirstName(),
 				user.getLastName(),
+				user.getDni(),
 				student.getYearPromotion(),
 				student.getStatus(),
 				storedFileService.toSummary(student.getReactualizationFile()),
