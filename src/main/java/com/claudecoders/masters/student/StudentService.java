@@ -102,6 +102,12 @@ public class StudentService {
 		return findEntity(id);
 	}
 
+	@Transactional(readOnly = true)
+	public Student getReferenceByUserId(UUID userId) {
+		return studentRepository.findByUser_Id(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student for user", userId));
+	}
+
 	private Student findEntity(UUID id) {
 		return studentRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Student", id));

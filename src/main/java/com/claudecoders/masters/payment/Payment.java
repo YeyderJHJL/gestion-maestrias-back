@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +29,9 @@ public class Payment extends BaseEntity implements Auditable {
 	private static final Set<String> AUDIT_FIELDS = Set.of(
 			"student",
 			"paymentNumber",
-			"paymentDate"
+			"paymentDate",
+			"concept",
+			"amount"
 	);
 
 	@Id
@@ -46,6 +49,12 @@ public class Payment extends BaseEntity implements Auditable {
 
 	@Column(name = "payment_date")
 	private LocalDate paymentDate;
+
+	@Column(name = "concept", length = 255)
+	private String concept;
+
+	@Column(name = "amount", precision = 10, scale = 2)
+	private BigDecimal amount;
 
 	public UUID getId() {
 		return id;
@@ -77,6 +86,22 @@ public class Payment extends BaseEntity implements Auditable {
 
 	public void setPaymentDate(LocalDate paymentDate) {
 		this.paymentDate = paymentDate;
+	}
+
+	public String getConcept() {
+		return concept;
+	}
+
+	public void setConcept(String concept) {
+		this.concept = concept;
+	}
+
+	public BigDecimal getAmount() {
+		return amount;
+	}
+
+	public void setAmount(BigDecimal amount) {
+		this.amount = amount;
 	}
 
 	@Override

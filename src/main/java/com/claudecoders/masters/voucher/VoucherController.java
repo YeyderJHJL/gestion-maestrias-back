@@ -40,6 +40,15 @@ public class VoucherController {
 		return ApiResponse.ok(voucherService.findAll());
 	}
 
+	@Operation(summary = "List my vouchers",
+			description = "Returns the authenticated student's vouchers with the state of each one")
+	@Authorize(roles = {UserRole.STUDENT},
+			description = "List the authenticated student's own vouchers (only STUDENT can access)")
+	@GetMapping("/my")
+	public ApiResponse<List<VoucherResponse>> findMy() {
+		return ApiResponse.ok(voucherService.findMy());
+	}
+
 	@Operation(summary = "Get voucher by id")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.STUDENT},
 			description = "Get voucher by id (only ADMIN, COORDINATOR and STUDENT can access)")
