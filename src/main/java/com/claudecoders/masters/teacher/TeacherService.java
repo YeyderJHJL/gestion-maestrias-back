@@ -266,6 +266,7 @@ public class TeacherService {
 				user.getEmail(),
 				user.getFirstName(),
 				user.getLastName(),
+				user.getDni(),
 				teacher.getCategory(),
 				teacher.getRegime(),
 				teacher.getAcademicDegree(),
