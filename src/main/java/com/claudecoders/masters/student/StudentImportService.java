@@ -144,6 +144,7 @@ public class StudentImportService {
 			Payment payment = new Payment();
 			payment.setStudent(savedStudent);
 			payment.setPaymentNumber(number);
+			payment.setConcept(number == 1 ? "Matrícula" : "Pensión N° " + number);
 			paymentRepository.save(payment);
 		}
 		return savedStudent;
@@ -219,9 +220,6 @@ public class StudentImportService {
 		if (row.phone != null && row.phone.length() > 20) {
 			observations.add("Telefono excede los 20 caracteres");
 		}
-		if (row.statusError != null) {
-			observations.add(row.statusError);
-		}
 	}
 
 	private ParsedRow toParsedRow(StudentBulkRequest item) {
@@ -236,9 +234,8 @@ public class StudentImportService {
 		parsed.yearPromotion = item.yearPromotion();
 		parsed.status = item.status();
 		parsed.reactualizationFileId = item.reactualizationFileId();
-		if (parsed.status == StudentStatus.REACTUALIZATION && parsed.reactualizationFileId == null) {
-			parsed.statusError = "Estudiantes recursantes requieren reactualizationFileId";
-		}
+		// El archivo de reactualización es opcional en el import masivo: se adjunta
+		// después desde el CRUD individual del estudiante.
 		return parsed;
 	}
 
@@ -268,7 +265,6 @@ public class StudentImportService {
 		String phone;
 		Integer yearPromotion;
 		StudentStatus status;
-		String statusError;
 		UUID reactualizationFileId;
 	}
 }
