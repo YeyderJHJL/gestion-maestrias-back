@@ -32,12 +32,12 @@ public class GradeService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<GradeResponse> findAll() {
-		return gradeRepository.findAll().stream()
-				.map(this::toResponse)
-				.toList();
+	public List<GradeResponse> findAll(UUID enrollmentId, UUID courseId, UUID studentId) {
+			return gradeRepository.findAllWithFilters(enrollmentId, courseId, studentId)
+							.stream()
+							.map(this::toResponse)
+							.toList();
 	}
-
 	@Transactional(readOnly = true)
 	public GradeResponse findById(UUID id) {
 		return toResponse(findEntity(id));

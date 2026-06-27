@@ -7,6 +7,8 @@ import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -36,8 +38,17 @@ public class GradeController {
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TEACHER, UserRole.STUDENT},
 		description = "List all grades (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping
-	public ApiResponse<List<GradeResponse>> findAll() {
-		return ApiResponse.ok(gradeService.findAll());
+	public ApiResponse<List<GradeResponse>> findAll(
+		@Parameter(description = "Filter by enrollment ID", example = "550e8400-e29b-41d4-a716-446655440000")
+		@RequestParam(required = false) UUID enrollmentId,
+
+		@Parameter(description = "Filter by course ID", example = "550e8400-e29b-41d4-a716-446655440000")
+		@RequestParam(required = false) UUID courseId,
+
+		@Parameter(description = "Filter by student ID", example = "550e8400-e29b-41d4-a716-446655440000")
+		@RequestParam(required = false) UUID studentId) {
+
+		return ApiResponse.ok(gradeService.findAll(enrollmentId, courseId, studentId));
 	}
 
 	@Operation(summary = "Get grade by id")
