@@ -21,11 +21,20 @@ public class ProdSecurityConfig {
             SecurityExceptionResponder responder) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(a -> a
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .anyRequest().authenticated())
+				.cors(Customizer.withDefaults())
+				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(a -> a
+						.requestMatchers(
+								"/actuator/health",
+								"/actuator/health/**",
+								"/api/docs",
+								"/api/docs/**",
+								"/api/swagger-ui/**",
+								"/swagger-ui/**",
+								"/api/scalar",
+								"/api/scalar/**"
+						).permitAll()
+						.anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(converter))
                         .authenticationEntryPoint(responder))

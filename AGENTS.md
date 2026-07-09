@@ -1,116 +1,75 @@
-# UNSA Masters Management — Backend
+# UNSA Masters Management - Backend
 
-REST API for the Graduate Office of the Universidad Nacional de San Agustín (UNSA).
-Covers academic management of the Master's in Computer Science: users, teachers, students,
-courses, assignments, enrollments, grades, pensions, payments, vouchers, files, and notifications.
-Out of scope: undergraduate degrees and titles.
+Spring Boot REST API for UNSA master's academic management. Single Gradle project, Java 25, PostgreSQL, Flyway, Google OAuth2 Resource Server, fake GCS in dev.
 
-## Tech stack
+## High-Value Commands
 
-| Component | Version |
-|---|---|
-| Java | 25 |
-| Spring Boot | 4.0.6 |
-| Spring Framework | 7.0.7 |
-| Hibernate / Spring Data JPA | 7.x |
-| Spring Security (OAuth2 Resource Server) | 7.x |
-| PostgreSQL | 18-alpine (Docker) |
-| Flyway | 11.x (managed by Spring Boot) |
-| Gradle | 9.4.1 (wrapper included; run via Docker for project checks) |
-| SpringDoc OpenAPI | 3.0.2 |
-| Spring Cloud GCP | 8.0.3 |
+- Start dev stack: `docker compose -f compose.dev.yml up --build`.
+- Dev services: API `http://localhost:8080`, Scalar `http://localhost:8080/api/scalar`, Swagger UI `http://localhost:8080/api/docs`, OpenAPI JSON `http://localhost:8080/api/docs/openapi.json`, test login page `http://localhost:3000`, fake GCS `http://localhost:4443`.
+- PostgreSQL maps to host `localhost:5430`; inside Docker use `postgres:5432`.
+- Tail API logs: `docker compose -f compose.dev.yml logs -f api`.
+- Full project test: `docker compose -f compose.dev.yml exec api ./gradlew test`.
+- Focused test: `docker compose -f compose.dev.yml exec api ./gradlew test --tests 'com.claudecoders.masters.SomeTest.someMethod'`.
+- Compile-only check matching CI intent: `docker compose -f compose.dev.yml exec api ./gradlew testClasses --no-daemon`.
+- DB shell: `docker exec masters-db psql -U root -d postgres`.
+- Flyway history: `docker exec masters-db psql -U root -d postgres -c "SELECT * FROM flyway_schema_history;"`.
 
-**No Lombok** — manual getters/setters. DTOs as `record`. No MapStruct — manual mapping in services.
+Run Gradle checks inside the `api` container when possible; the wrapper exists locally, but Docker provides the Java 25/dev-service environment used by this repo.
 
-## Commands
+## Repo Skills
 
-```bash
-docker compose -f compose.dev.yml up --build   # start dev environment (API + PostgreSQL + fake GCS + frontend test page)
-docker compose -f compose.dev.yml logs -f api  # tail API logs
-docker compose -f compose.dev.yml exec api ./gradlew test # run tests inside Docker
-docker exec masters-db psql -U root -d postgres # connect to DB
-```
+- `opencode.json` registers repo-local `skills/`; load the matching skill before touching architecture, JPA/Flyway, error responses, roles, or security.
+- Most useful skills: `architecture`, `database`, `error-handling`, `roles`, `security`.
 
-The Gradle wrapper is present, but tests and builds should run **inside Docker** so Java 25 and the dev services match the project environment.
+## Wiring And Boundaries
 
-## Critical conventions
+- Controllers map feature paths like `/users`; `WebConfig` adds `/api/v1` to all `@RestController` routes.
+- Package by feature under `src/main/java/com/claudecoders/masters/{domain}`; keep only cross-cutting code in `shared/`.
+- Current domain packages include `semester/`; older `promotion/` references are stale.
+- No Lombok and no MapStruct. DTOs are Java `record`s; mapping is manual in services.
+- Services use constructor injection and Spring transactions. Prefer `@Transactional(readOnly = true)` for reads and `@Transactional` for writes.
 
-1. **UUID v7** for business entities → `@UuidGenerator(style = Style.VERSION_7)`. Never `GenerationType.UUID` (emits v4, fragments indexes).
-2. **Soft delete** via `@SQLDelete` + `@SQLRestriction("deleted_at IS NULL")` on every entity with `deleted_at`. Never set `deletedAt` manually.
-3. **Timestamps in UTC** → `Instant` for audit timestamps, `LocalDate` for calendar dates.
-4. **100% Google OAuth2** — no passwords in the DB. `users.google_sub` = `sub` claim from the Google JWT. `AppJwtAuthenticationConverter` resolves the User entity and sets `AppUserPrincipal` in the `SecurityContextHolder`.
-5. **Responses to client in Spanish** — enums serialize with `@JsonValue` to their Spanish label. Error messages in Spanish.
-6. **Frozen schema** — entities must match the DB exactly. Never rename columns without a Flyway migration.
-7. **`spring.jpa.open-in-view: false`** — never change to `true`.
-8. **`ddl-auto: none`** — schema is owned by Flyway migrations in `src/main/resources/db/migration/`.
-9. **Default role = ADMIN** — every endpoint is ADMIN-only unless annotated with `@Authorize` or `@Public`. See `skills/roles/SKILL.md`.
-10. **Personal data lives in `users`** — `first_name`, `last_name`, `dni` are on the `users` table, not on `teachers` or `students`.
-11. **`SecurityHelper.currentUserId()`** — the canonical way to get the authenticated user's UUID inside controllers and services. Never inject `Authentication` directly.
-12. **File references use `stored_files.id`** — domain tables reference uploaded files by FK (`id_syllabus_file`, `id_resolution_file`, `id_file`). Never store GCS URLs in domain tables.
+## Database Rules
 
-## Package structure (package by feature)
+- Schema is owned by Flyway in `src/main/resources/db/migration/`; never edit an applied migration, add `V{next}__description.sql`.
+- Keep `spring.jpa.open-in-view: false`; dev `ddl-auto` defaults to `none`, prod uses `validate`. Do not switch to `update` or `create`.
+- Business UUID PKs use `@GeneratedValue` plus `@UuidGenerator(style = Style.VERSION_7)`. Never use `GenerationType.UUID`.
+- Catalog PKs (`programs`, `semesters`, `states`) use `Integer` IDENTITY; append-only/surrogate PKs (`assignments`, `audit_logs`, `notifications`) use `Long` IDENTITY.
+- Entities with `deleted_at` need `@SQLDelete` and `@SQLRestriction("deleted_at IS NULL")`; do not set `deletedAt` manually or duplicate that filter in JPQL.
+- Uniqueness with soft delete belongs in SQL partial indexes (`WHERE deleted_at IS NULL`), not plain JPA `@UniqueConstraint`.
+- PostgreSQL enums are named types; map with `@Enumerated(EnumType.STRING)` and `@JdbcTypeCode(SqlTypes.NAMED_ENUM)`. Java enum constants must match PG values.
+- Enums implement `LabeledEnum` and serialize Spanish labels via `@JsonValue`; new client-facing domain messages should be Spanish, while technical logs stay English.
+- Audit timestamps use `Instant`; calendar/business dates use `LocalDate`.
 
-```
-src/main/java/com/claudecoders/masters/
-├── MastersApplication.java
-├── shared/
-│   ├── audit/          BaseEntity, CreatedEntity
-│   ├── config/         OpenApiConfig, SecurityConfig (dev/test), ProdSecurityConfig, WebConfig
-│   ├── exception/      ApiError, ApiResponse, BusinessException,
-│   │                   GlobalExceptionHandler, ResourceNotFoundException,
-│   │                   UnauthorizedException
-│   ├── security/       @Authorize, @Public, AppJwtAuthenticationConverter,
-│   │                   AppUserPrincipal, RolesEnforcementAspect,
-│   │                   RolesOperationCustomizer, SecurityExceptionResponder,
-│   │                   SecurityHelper
-│   ├── seed/           DatabaseSeeder
-│   ├── storage/        GcsStorageService
-│   └── enums/          LabeledEnum
-├── assignment/
-├── auditlog/
-├── course/
-├── enrollment/
-├── file/               StoredFile — stored_files table
-├── grade/
-├── notification/
-├── payment/
-├── pension/
-├── program/
-├── promotion/
-├── state/
-├── student/
-├── teacher/
-├── user/
-└── voucher/
-```
+## Security And Roles
 
-## Available skills
+- The backend only verifies Google ID tokens. Do not add backend passwords, JWT secrets, or custom JWT issuance.
+- Users are pre-registered; first login links `users.google_sub` from the Google `sub` claim by matching email.
+- Use `SecurityHelper.currentUserId()` or `currentPrincipal()` in controllers/services; do not inject `Authentication` into controllers or accept client-supplied actor/uploader IDs.
+- In `dev` and `test`, the security filter chain is `permitAll()` and processes a JWT only if provided.
+- `RolesEnforcementAspect` is active in `dev` and `prod`, disabled in `test`; an unannotated controller method defaults to ADMIN-only. Use `@Public` for truly public routes and `@Authorize` for role-specific access.
+- In `prod`, all routes require JWT except health; app roles come from `users.role`, not from Google JWT claims.
 
-Project skills are registered in `opencode.json` via `skills.paths: ["skills"]`.
+## API Shape
 
-- **`skills/architecture/SKILL.md`** — entities, repositories, services, controllers, DTOs, enums, BaseEntity, UUID v7, soft delete patterns.
-- **`skills/database/SKILL.md`** — Flyway migrations, ID strategy, soft delete with partial indexes, PostgreSQL enums, `stored_files` table, query patterns.
-- **`skills/error-handling/SKILL.md`** — `ApiResponse<T>` / `ApiError` shapes, exception hierarchy, `GlobalExceptionHandler`, HTTP codes, response body examples.
-- **`skills/roles/SKILL.md`** — `@Authorize` / `@Public` system, Swagger visualization, `RolesEnforcementAspect`, available roles.
-- **`skills/security/SKILL.md`** — OAuth2 Resource Server flow, `AppJwtAuthenticationConverter`, `AppUserPrincipal`, `SecurityHelper`, dev vs prod profiles, CORS, first-login google_sub linking.
+- Successful endpoints return `ApiResponse<T>` or intentional `void`/204; errors use `ApiError` through the existing `GlobalExceptionHandler` and `SecurityExceptionResponder`.
+- New controllers need class-level `@Tag`, method-level `@Operation`, `@Valid` on request bodies, and `@Authorize` or `@Public` where the default ADMIN-only behavior is not intended.
+- Use `ResourceNotFoundException` for 404 and `BusinessException` for 409-style domain conflicts; do not add a second `@RestControllerAdvice`.
 
-## Adding a new Flyway migration
+## Files And GCS
 
-Create a new file — never modify an existing one:
+- `stored_files` stores metadata and `object_key`; domain tables store FKs to `stored_files.id`, never GCS URLs or signed URLs.
+- Upload files first through `/api/v1/files...`, then pass the returned UUID in domain requests.
+- Domain responses should include stored-file summary metadata. `GET /api/v1/files/{id}` is the endpoint that returns a temporary `downloadUrl`.
+- Current syllabus FK is `assignments.id_syllabus_file`; older `courses.id_syllabus_file` references are stale after `V6__move_syllabus_file_to_assignments.sql`.
 
-```
-src/main/resources/db/migration/V{next}__your_description.sql
-```
+## Auditing
 
-Flyway runs automatically on startup and applies pending migrations.
+- Entities that should produce audit logs implement `Auditable`; `AuditHibernateListener` records only fields returned by `auditFields()` and only when a current user is present.
+- `audit_logs.id_entity` stores IDs as text so both UUID and numeric PK entities can be audited.
 
-## Definition of Done
+## CI And Branch Flow
 
-A task is complete when:
-1. `docker compose -f compose.dev.yml exec api ./gradlew test` passes with `compose.dev.yml` running.
-2. New endpoints have `@Operation` + `@Tag`, return `ApiResponse<T>` (or 204), and validate input with `@Valid`.
-3. New entities extend `BaseEntity` or `CreatedEntity`, use the correct PK type (UUID v7 for business, IDENTITY for catalogs), and have `@SQLDelete` + `@SQLRestriction` if they have `deleted_at`.
-4. Services use constructor injection and `@Transactional`.
-5. Error messages to the user in Spanish; technical logs in English.
-6. Any schema change has a corresponding Flyway migration (never modify existing migration files).
-7. Endpoints that need the authenticated user call `SecurityHelper.currentUserId()` — never accept a `uploaderId` or similar param that bypasses auth.
+- PR flow is enforced: `feature/* -> develop`, `develop -> main`.
+- CI validates branch flow, temporary merge with the target branch, and `./gradlew testClasses --no-daemon` on Java 25.
+- Before handing off code changes, prefer the full Docker test command above; if it cannot run, state the blocker explicitly.
