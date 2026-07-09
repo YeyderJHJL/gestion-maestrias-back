@@ -124,8 +124,9 @@ Servicios que se levantan:
 
 ### Acceso a la documentación
 
-- **Swagger UI**: http://localhost:8080/docs
-- **OpenAPI JSON**: http://localhost:8080/docs/openapi.json
+- **Scalar UI**: http://localhost:8080/api/scalar
+- **Swagger UI**: http://localhost:8080/api/docs
+- **OpenAPI JSON**: http://localhost:8080/api/docs/openapi.json
 
 ### Comandos útiles
 

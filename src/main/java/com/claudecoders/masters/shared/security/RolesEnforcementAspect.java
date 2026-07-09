@@ -69,6 +69,12 @@ public class RolesEnforcementAspect {
 		}
 		return path.equals("/docs")
 				|| path.startsWith("/docs/")
+				|| path.equals("/api/docs")
+				|| path.startsWith("/api/docs/")
+				|| path.startsWith("/api/swagger-ui/")
+				|| path.startsWith("/swagger-ui/")
+				|| path.equals("/api/scalar")
+				|| path.startsWith("/api/scalar/")
 				|| path.equals("/actuator/health")
 				|| path.startsWith("/actuator/health/");
 	}

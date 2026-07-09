@@ -71,9 +71,9 @@ management:
 
 springdoc:
   api-docs:
-    path: /docs/openapi.json
+    path: /api/docs/openapi.json
   swagger-ui:
-    path: /docs
+    path: /api/docs
     operations-sorter: method
     tags-sorter: alpha
     persist-authorization: true
