@@ -9,9 +9,10 @@ import java.util.UUID;
 public record EnrollmentRequest(
 		@NotNull UUID studentId,
 		@NotNull UUID courseId,
+		@NotNull Integer semesterId,
 		@NotNull Integer stateId,
 		@NotNull LocalDate enrollmentDate,
-		String resolutionUrl,
+		UUID resolutionFileId,
 		String observations
 ) {
 }

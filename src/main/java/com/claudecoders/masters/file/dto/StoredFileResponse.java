@@ -1,5 +1,6 @@
 package com.claudecoders.masters.file.dto;
 
+import com.claudecoders.masters.file.FilePurpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
@@ -9,10 +10,11 @@ public record StoredFileResponse(
 		UUID id,
 		String originalName,
 		String contentType,
+		FilePurpose purpose,
 		Long sizeBytes,
 		UUID uploadedById,
 		Instant createdAt,
-		@Schema(description = "Pre-signed URL valid for 15 minutes — use this to download the file")
+		@Schema(description = "Pre-signed URL valid for the configured expiration time — use this to download the file")
 		String downloadUrl
 ) {
 }

@@ -1,6 +1,9 @@
 package com.claudecoders.masters.assignment;
 
 import com.claudecoders.masters.course.Course;
+import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.semester.Semester;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.teacher.Teacher;
 import jakarta.persistence.Column;
@@ -13,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -20,7 +24,15 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "assignments")
 @SQLDelete(sql = "UPDATE assignments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Assignment extends BaseEntity {
+public class Assignment extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"course",
+			"teacher",
+			"semester",
+			"assignmentDate",
+			"syllabusFile"
+	);
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,8 +47,16 @@ public class Assignment extends BaseEntity {
 	@JoinColumn(name = "id_teacher", nullable = false, updatable = false)
 	private Teacher teacher;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_semester", nullable = false)
+	private Semester semester;
+
 	@Column(name = "assignment_date", nullable = false)
 	private LocalDate assignmentDate = LocalDate.now();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_syllabus_file")
+	private StoredFile syllabusFile;
 
 	public Long getId() {
 		return id;
@@ -62,11 +82,37 @@ public class Assignment extends BaseEntity {
 		this.teacher = teacher;
 	}
 
+	public Semester getSemester() {
+		return semester;
+	}
+
+	public void setSemester(Semester semester) {
+		this.semester = semester;
+	}
+
 	public LocalDate getAssignmentDate() {
 		return assignmentDate;
 	}
 
 	public void setAssignmentDate(LocalDate assignmentDate) {
 		this.assignmentDate = assignmentDate;
+	}
+
+	public StoredFile getSyllabusFile() {
+		return syllabusFile;
+	}
+
+	public void setSyllabusFile(StoredFile syllabusFile) {
+		this.syllabusFile = syllabusFile;
+	}
+
+	@Override
+	public Long getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

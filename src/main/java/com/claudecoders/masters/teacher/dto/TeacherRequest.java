@@ -16,6 +16,7 @@ public record TeacherRequest(
 		AcademicDegree academicDegree,
 		@Size(max = 255) String specialty,
 		@NotNull TeacherType type,
-		@Size(max = 20) String phone
+		@Size(max = 20) String phone,
+		@Size(max = 255) String university
 ) {
 }

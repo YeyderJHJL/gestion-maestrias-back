@@ -9,7 +9,7 @@ import java.util.UUID;
 public record AuditEvent(
 		UUID actorUserId,
 		String entityType,
-		UUID entityId,
+		Object entityId,
 		AuditAction action,
 		Map<String, Object> oldValues,
 		Map<String, Object> newValues

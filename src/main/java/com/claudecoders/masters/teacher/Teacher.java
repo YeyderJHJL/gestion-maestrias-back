@@ -35,7 +35,8 @@ public class Teacher extends BaseEntity implements Auditable {
 			"academicDegree",
 			"specialty",
 			"type",
-			"phone"
+			"phone",
+			"university"
 	);
 
 	@Id
@@ -63,6 +64,9 @@ public class Teacher extends BaseEntity implements Auditable {
 
 	@Column(name = "specialty", length = 255)
 	private String specialty;
+
+	@Column(name = "university", length = 255)
+	private String university;
 
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -118,6 +122,14 @@ public class Teacher extends BaseEntity implements Auditable {
 
 	public void setSpecialty(String specialty) {
 		this.specialty = specialty;
+	}
+
+	public String getUniversity() {
+    return university;
+	}
+
+	public void setUniversity(String university) {
+    this.university = university;
 	}
 
 	public TeacherType getType() {

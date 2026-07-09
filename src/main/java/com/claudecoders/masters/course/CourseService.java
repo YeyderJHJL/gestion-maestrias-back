@@ -2,10 +2,6 @@ package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.course.dto.CourseRequest;
 import com.claudecoders.masters.course.dto.CourseResponse;
-import com.claudecoders.masters.program.Program;
-import com.claudecoders.masters.program.ProgramService;
-import com.claudecoders.masters.promotion.Promotion;
-import com.claudecoders.masters.promotion.PromotionService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import java.util.List;
@@ -17,17 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseService {
 
 	private final CourseRepository courseRepository;
-	private final ProgramService programService;
-	private final PromotionService promotionService;
 
-	public CourseService(
-			CourseRepository courseRepository,
-			ProgramService programService,
-			PromotionService promotionService
-	) {
+	public CourseService(CourseRepository courseRepository) {
 		this.courseRepository = courseRepository;
-		this.programService = programService;
-		this.promotionService = promotionService;
 	}
 
 	@Transactional(readOnly = true)
@@ -73,40 +61,23 @@ public class CourseService {
 
 	private void applyRequest(Course course, CourseRequest request) {
 		if (request.endDate().isBefore(request.startDate())) {
-			throw new BusinessException("Course end date must be on or after start date");
+			throw new BusinessException("La fecha de fin del curso debe ser posterior o igual a la fecha de inicio");
 		}
-		Program program = programService.getReference(request.programId());
-		Promotion promotion = promotionService.getReference(request.promotionId());
-		if (!promotion.getProgram().getId().equals(program.getId())) {
-			throw new BusinessException("Promotion does not belong to the selected program");
-		}
-		course.setProgram(program);
-		course.setPromotion(promotion);
 		course.setCode(request.code());
 		course.setName(request.name());
-		course.setType(request.type());
 		course.setStartDate(request.startDate());
 		course.setEndDate(request.endDate());
 		course.setObservations(request.observations());
-		course.setSyllabusUrl(request.syllabusUrl());
 	}
 
 	private CourseResponse toResponse(Course course) {
-		Program program = course.getProgram();
-		Promotion promotion = course.getPromotion();
 		return new CourseResponse(
 				course.getId(),
-				program.getId(),
-				program.getName(),
-				promotion.getId(),
-				promotion.getName(),
 				course.getCode(),
 				course.getName(),
-				course.getType(),
 				course.getStartDate(),
 				course.getEndDate(),
 				course.getObservations(),
-				course.getSyllabusUrl(),
 				course.getCreatedAt(),
 				course.getUpdatedAt()
 		);

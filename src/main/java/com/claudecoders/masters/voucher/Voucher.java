@@ -1,6 +1,8 @@
 package com.claudecoders.masters.voucher;
 
+import com.claudecoders.masters.file.StoredFile;
 import com.claudecoders.masters.payment.Payment;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import jakarta.persistence.Column;
@@ -11,7 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -22,7 +24,14 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Table(name = "vouchers")
 @SQLDelete(sql = "UPDATE vouchers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Voucher extends BaseEntity {
+public class Voucher extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"payment",
+			"state",
+			"file",
+			"observation"
+	);
 
 	@Id
 	@GeneratedValue
@@ -38,11 +47,9 @@ public class Voucher extends BaseEntity {
 	@JoinColumn(name = "id_state", nullable = false)
 	private State state;
 
-	@Column(name = "file_url", nullable = false, columnDefinition = "TEXT")
-	private String fileUrl;
-
-	@Column(name = "declared_amount", nullable = false, precision = 10, scale = 2)
-	private BigDecimal declaredAmount;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_file", nullable = false)
+	private StoredFile file;
 
 	@Column(name = "observation", columnDefinition = "TEXT")
 	private String observation;
@@ -71,20 +78,12 @@ public class Voucher extends BaseEntity {
 		this.state = state;
 	}
 
-	public String getFileUrl() {
-		return fileUrl;
+	public StoredFile getFile() {
+		return file;
 	}
 
-	public void setFileUrl(String fileUrl) {
-		this.fileUrl = fileUrl;
-	}
-
-	public BigDecimal getDeclaredAmount() {
-		return declaredAmount;
-	}
-
-	public void setDeclaredAmount(BigDecimal declaredAmount) {
-		this.declaredAmount = declaredAmount;
+	public void setFile(StoredFile file) {
+		this.file = file;
 	}
 
 	public String getObservation() {
@@ -93,5 +92,15 @@ public class Voucher extends BaseEntity {
 
 	public void setObservation(String observation) {
 		this.observation = observation;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

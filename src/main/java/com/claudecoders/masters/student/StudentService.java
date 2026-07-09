@@ -1,7 +1,7 @@
 package com.claudecoders.masters.student;
 
-import com.claudecoders.masters.promotion.Promotion;
-import com.claudecoders.masters.promotion.PromotionService;
+import com.claudecoders.masters.file.FilePurpose;
+import com.claudecoders.masters.file.StoredFileService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.student.dto.StudentRequest;
@@ -19,16 +19,16 @@ public class StudentService {
 
 	private final StudentRepository studentRepository;
 	private final UserService userService;
-	private final PromotionService promotionService;
+	private final StoredFileService storedFileService;
 
 	public StudentService(
 			StudentRepository studentRepository,
 			UserService userService,
-			PromotionService promotionService
+			StoredFileService storedFileService
 	) {
 		this.studentRepository = studentRepository;
 		this.userService = userService;
-		this.promotionService = promotionService;
+		this.storedFileService = storedFileService;
 	}
 
 	@Transactional(readOnly = true)
@@ -39,8 +39,30 @@ public class StudentService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<StudentResponse> search(Integer yearPromotion, StudentStatus status, String search) {
+		String normalized = (search == null || search.isBlank()) ? null : search.trim();
+		return studentRepository.search(yearPromotion, status, normalized).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<StudentResponse> findByPromotion(Integer yearPromotion) {
+		return studentRepository.findByYearPromotionOrderByUser_LastNameAscUser_FirstNameAsc(yearPromotion).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public StudentResponse findById(UUID id) {
 		return toResponse(findEntity(id));
+	}
+
+	@Transactional(readOnly = true)
+	public StudentResponse findByUserId(UUID userId) {
+		return studentRepository.findByUser_Id(userId)
+				.map(this::toResponse)
+				.orElseThrow(() -> new ResourceNotFoundException("Student for user", userId));
 	}
 
 	@Transactional
@@ -58,6 +80,19 @@ public class StudentService {
 	}
 
 	@Transactional
+	public StudentResponse changeStatus(UUID id, StudentStatus status, Boolean active) {
+		Student student = findEntity(id);
+		if (status != null) {
+			student.setStatus(status);
+			studentRepository.save(student);
+		}
+		if (active != null) {
+			userService.setActive(student.getUser().getId(), active);
+		}
+		return toResponse(findEntity(id));
+	}
+
+	@Transactional
 	public void delete(UUID id) {
 		studentRepository.delete(findEntity(id));
 	}
@@ -65,6 +100,12 @@ public class StudentService {
 	@Transactional(readOnly = true)
 	public Student getReference(UUID id) {
 		return findEntity(id);
+	}
+
+	@Transactional(readOnly = true)
+	public Student getReferenceByUserId(UUID userId) {
+		return studentRepository.findByUser_Id(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student for user", userId));
 	}
 
 	private Student findEntity(UUID id) {
@@ -75,11 +116,22 @@ public class StudentService {
 	private void applyRequest(Student student, StudentRequest request) {
 		User user = userService.getReference(request.userId());
 		if (user.getRole() != UserRole.STUDENT) {
-			throw new BusinessException("User must have STUDENT role");
+			throw new BusinessException("El usuario debe tener rol ESTUDIANTE");
 		}
-		Promotion promotion = promotionService.getReference(request.promotionId());
+		boolean cuiChanged = !request.cui().equals(student.getCui());
+		boolean paymentCodeChanged = !request.paymentCode().equals(student.getPaymentCode());
+		if (cuiChanged && studentRepository.existsByCui(request.cui())) {
+			throw new BusinessException("Ya existe un estudiante con el CUI " + request.cui());
+		}
+		if (paymentCodeChanged && studentRepository.existsByPaymentCode(request.paymentCode())) {
+			throw new BusinessException("Ya existe un estudiante con el codigo de pago " + request.paymentCode());
+		}
 		student.setUser(user);
-		student.setPromotion(promotion);
+		student.setYearPromotion(request.yearPromotion());
+		student.setStatus(request.status() == null ? StudentStatus.REGULAR : request.status());
+		student.setReactualizationFile(request.reactualizationFileId() == null
+				? null
+				: storedFileService.getReference(request.reactualizationFileId(), FilePurpose.REACTUALIZATION));
 		student.setCui(request.cui());
 		student.setPaymentCode(request.paymentCode());
 		student.setPhone(request.phone());
@@ -87,15 +139,16 @@ public class StudentService {
 
 	private StudentResponse toResponse(Student student) {
 		User user = student.getUser();
-		Promotion promotion = student.getPromotion();
 		return new StudentResponse(
 				student.getId(),
 				user.getId(),
 				user.getEmail(),
 				user.getFirstName(),
 				user.getLastName(),
-				promotion.getId(),
-				promotion.getName(),
+				user.getDni(),
+				student.getYearPromotion(),
+				student.getStatus(),
+				storedFileService.toSummary(student.getReactualizationFile()),
 				student.getCui(),
 				student.getPaymentCode(),
 				student.getPhone(),

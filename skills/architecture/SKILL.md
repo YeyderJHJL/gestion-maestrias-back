@@ -52,9 +52,11 @@ private UUID id;
 
 Usar `Style.VERSION_7` (time-ordered). Nunca `@GeneratedValue(strategy = GenerationType.UUID)` (emite v4 random, fragmenta índices).
 
-**PKs de tablas catálogo** (`programs`, `promotions`, `pensions`, `states`): `Integer` con `GenerationType.IDENTITY`.
+**PKs de tablas catálogo** (`programs`, `semesters`, `states`): `Integer` con `GenerationType.IDENTITY`.
 **PKs de tablas append-only** (`audit_logs`, `notifications`): `Long` con `GenerationType.IDENTITY`.
-**`assignments`**: `Long` con `GenerationType.IDENTITY` + índice único parcial `(id_course, id_teacher) WHERE deleted_at IS NULL`.
+**`assignments`**: `Long` con `GenerationType.IDENTITY` + índice único parcial `(id_course, id_teacher, id_semester) WHERE deleted_at IS NULL`.
+
+Las entidades auditables implementan `Auditable`. `getAuditId()` devuelve `Object` para soportar PKs UUID y numéricas; `audit_logs.id_entity` almacena el valor como texto.
 
 ## Soft delete
 
@@ -69,7 +71,7 @@ En toda entidad que tiene `deleted_at`:
 - `@SQLRestriction` agrega `deleted_at IS NULL` a cada query de Hibernate automáticamente.
 - **Nunca** setear `deletedAt` manualmente ni agregar `WHERE deleted_at IS NULL` en JPQL.
 
-## Entidad completa — ejemplo
+## Entidad — ejemplo abreviado
 
 ```java
 @Entity
@@ -84,7 +86,10 @@ public class Course extends BaseEntity {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "code", nullable = false, length = 100)
+    private String code;
+
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -98,12 +103,11 @@ public class Course extends BaseEntity {
 
 ## Repositorios
 
-Extender `JpaRepository`. Queries por nombre de método cuando son simples, `@Query` cuando no.
+Extender `JpaRepository`. Puede quedar vacío si el servicio solo necesita CRUD. Agregar queries por nombre de método cuando son simples, `@Query` cuando no.
 
 ```java
 public interface CourseRepository extends JpaRepository<Course, UUID> {
-    boolean existsByCode(String code);
-    Optional<Course> findByCode(String code);
+    boolean existsByPromotion_IdAndCode(Integer promotionId, String code);
 }
 ```
 
@@ -111,11 +115,10 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
 ## Servicios
 
-`@Transactional` a nivel de clase (read-write por defecto), override con `@Transactional(readOnly = true)` en métodos de lectura.
+Usar `@Transactional` en servicios. El patrón más común del repo es anotar métodos: `@Transactional(readOnly = true)` para lectura y `@Transactional` para escritura. `@Transactional` a nivel de clase también es válido cuando casi todos los métodos son write-oriented.
 
 ```java
 @Service
-@Transactional
 public class CourseService {
 
     private final CourseRepository courseRepository;
@@ -129,8 +132,9 @@ public class CourseService {
         return toResponse(getOrThrow(id));
     }
 
+    @Transactional
     public CourseResponse create(CourseRequest req) {
-        if (courseRepository.existsByCode(req.code())) {
+        if (courseRepository.existsByPromotion_IdAndCode(req.promotionId(), req.code())) {
             throw new BusinessException("Ya existe un curso con código " + req.code());
         }
         Course course = new Course();
@@ -144,9 +148,10 @@ public class CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
     }
 
-    // Para obtener una referencia lazy sin hit a la BD (útil en relaciones ManyToOne)
+    // En este repo getReference valida existencia antes de asignar relaciones.
+    @Transactional(readOnly = true)
     public Course getReference(UUID id) {
-        return courseRepository.getReferenceById(id);
+        return getOrThrow(id);
     }
 
     private CourseResponse toResponse(Course c) {
@@ -181,24 +186,24 @@ public class CourseController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     @Authorize(roles = {UserRole.ADMIN}, description = "Crear un nuevo curso")
     @Operation(summary = "Create a new course")
-    public ApiResponse<CourseResponse> create(@Valid @RequestBody CourseRequest req) {
-        return ApiResponse.ok(courseService.create(req), "Curso creado correctamente");
+    public ResponseEntity<ApiResponse<CourseResponse>> create(@Valid @RequestBody CourseRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(courseService.create(req), "Curso creado correctamente"));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Soft-delete a course")
-    public void delete(@PathVariable UUID id) {
+    public ApiResponse<Void> delete(@PathVariable UUID id) {
         courseService.delete(id);
+        return ApiResponse.ok(null, "Curso eliminado correctamente");
     }
 }
 ```
 
 - El prefijo `/api/v1` lo agrega automáticamente `WebConfig.configurePathMatch`.
-- Respuestas exitosas → `ApiResponse<T>` o `void` (204).
+- Respuestas exitosas → `ApiResponse<T>`, `ApiResponse<Void>` o `void` con 204 cuando intencionalmente no hay body.
 - `@Tag` a nivel de clase, `@Operation` a nivel de método.
 - `@Authorize` o `@Public` — ver `skills/roles/SKILL.md`.
 
@@ -206,8 +211,10 @@ public class CourseController {
 
 ```java
 public record CourseRequest(
-    @NotBlank @Size(max = 20) String code,
-    @NotBlank @Size(max = 200) String name,
+    @NotNull Integer programId,
+    @NotNull Integer promotionId,
+    @NotBlank @Size(max = 100) String code,
+    @NotBlank @Size(max = 255) String name,
     @NotNull CourseType type
 ) {}
 
@@ -223,6 +230,26 @@ public record CourseResponse(
 - Validaciones Bean Validation en los componentes del record.
 - Un DTO por dirección. No reutilizar el request como response.
 - Mapping manual en el service (método `toResponse`).
+
+## Archivos en módulos de dominio
+
+Los módulos de negocio no almacenan URLs de GCS. Guardan una relación a `StoredFile` por FK y los requests reciben el UUID del archivo subido:
+
+```java
+public record CourseRequest(
+    // ...otros campos...
+    UUID syllabusFileId
+) {}
+
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "id_syllabus_file")
+private StoredFile syllabusFile;
+```
+
+- Subir primero con `POST /files` y usar el `id` devuelto.
+- Para responses de dominio, devolver metadata resumida del archivo, no `downloadUrl`.
+- Para descargar, el cliente llama `GET /files/{id}` y usa el `downloadUrl` temporal que genera `GcsStorageService`.
+- Convenciones actuales: `courses.id_syllabus_file`, `enrollments.id_resolution_file`, `vouchers.id_file`.
 
 ## Enum con label en español
 
@@ -260,3 +287,4 @@ El nombre Java del enum (`REGULAR`) debe coincidir con el valor del ENUM de Post
 - `LocalDateTime` para campos de auditoría — usar `Instant`.
 - `ddl-auto: update` o `create` — el schema lo maneja el SQL.
 - `open-in-view: true`.
+- Guardar URLs de GCS en tablas de dominio — usar FK a `stored_files.id`.

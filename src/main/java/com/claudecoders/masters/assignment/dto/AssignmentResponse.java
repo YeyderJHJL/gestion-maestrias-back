@@ -1,5 +1,6 @@
 package com.claudecoders.masters.assignment.dto;
 
+import com.claudecoders.masters.file.dto.StoredFileSummaryResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,7 +15,11 @@ public record AssignmentResponse(
 		UUID teacherId,
 		String teacherEmail,
 		String teacherName,
+		Integer semesterId,
+		Integer semesterYear,
+		String semesterCode,
 		LocalDate assignmentDate,
+		StoredFileSummaryResponse syllabusFile,
 		Instant createdAt,
 		Instant updatedAt
 ) {

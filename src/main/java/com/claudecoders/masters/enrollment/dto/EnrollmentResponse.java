@@ -1,5 +1,6 @@
 package com.claudecoders.masters.enrollment.dto;
 
+import com.claudecoders.masters.file.dto.StoredFileSummaryResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,11 +15,14 @@ public record EnrollmentResponse(
 		UUID courseId,
 		String courseCode,
 		String courseName,
+		Integer semesterId,
+		Integer semesterYear,
+		String semesterCode,
 		Integer stateId,
 		String stateCode,
 		String stateName,
 		LocalDate enrollmentDate,
-		String resolutionUrl,
+		StoredFileSummaryResponse resolutionFile,
 		String observations,
 		Instant createdAt,
 		Instant updatedAt

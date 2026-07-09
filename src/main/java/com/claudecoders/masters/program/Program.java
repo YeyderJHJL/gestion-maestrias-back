@@ -24,6 +24,9 @@ public class Program extends BaseEntity {
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;
 
+	@Column(name = "pension_count", nullable = false)
+	private Integer pensionCount = 14;
+
 	public Integer getId() {
 		return id;
 	}
@@ -38,5 +41,13 @@ public class Program extends BaseEntity {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public Integer getPensionCount() {
+		return pensionCount;
+	}
+
+	public void setPensionCount(Integer pensionCount) {
+		this.pensionCount = pensionCount;
 	}
 }

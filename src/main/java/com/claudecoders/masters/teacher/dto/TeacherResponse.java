@@ -14,12 +14,14 @@ public record TeacherResponse(
 		String email,
 		String firstName,
 		String lastName,
+		String dni,
 		TeacherCategory category,
 		String regime,
 		AcademicDegree academicDegree,
 		String specialty,
 		TeacherType type,
 		String phone,
+    String university,
 		Instant createdAt,
 		Instant updatedAt
 ) {

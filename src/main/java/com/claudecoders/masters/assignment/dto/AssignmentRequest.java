@@ -9,6 +9,8 @@ import java.util.UUID;
 public record AssignmentRequest(
 		@NotNull UUID courseId,
 		@NotNull UUID teacherId,
-		@NotNull LocalDate assignmentDate
+		@NotNull Integer semesterId,
+		@NotNull LocalDate assignmentDate,
+		UUID syllabusFileId
 ) {
 }

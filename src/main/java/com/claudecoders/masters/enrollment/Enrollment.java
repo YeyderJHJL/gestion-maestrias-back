@@ -1,6 +1,9 @@
 package com.claudecoders.masters.enrollment;
 
 import com.claudecoders.masters.course.Course;
+import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.semester.Semester;
+import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.student.Student;
@@ -13,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -23,7 +27,17 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Table(name = "enrollments")
 @SQLDelete(sql = "UPDATE enrollments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Enrollment extends BaseEntity {
+public class Enrollment extends BaseEntity implements Auditable {
+
+	private static final Set<String> AUDIT_FIELDS = Set.of(
+			"student",
+			"course",
+			"semester",
+			"state",
+			"enrollmentDate",
+			"resolutionFile",
+			"observations"
+	);
 
 	@Id
 	@GeneratedValue
@@ -43,11 +57,16 @@ public class Enrollment extends BaseEntity {
 	@JoinColumn(name = "id_state", nullable = false)
 	private State state;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_semester", nullable = false)
+	private Semester semester;
+
 	@Column(name = "enrollment_date", nullable = false)
 	private LocalDate enrollmentDate = LocalDate.now();
 
-	@Column(name = "resolution_url", columnDefinition = "TEXT")
-	private String resolutionUrl;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_resolution_file")
+	private StoredFile resolutionFile;
 
 	@Column(name = "observations", columnDefinition = "TEXT")
 	private String observations;
@@ -84,6 +103,14 @@ public class Enrollment extends BaseEntity {
 		this.state = state;
 	}
 
+	public Semester getSemester() {
+		return semester;
+	}
+
+	public void setSemester(Semester semester) {
+		this.semester = semester;
+	}
+
 	public LocalDate getEnrollmentDate() {
 		return enrollmentDate;
 	}
@@ -92,12 +119,12 @@ public class Enrollment extends BaseEntity {
 		this.enrollmentDate = enrollmentDate;
 	}
 
-	public String getResolutionUrl() {
-		return resolutionUrl;
+	public StoredFile getResolutionFile() {
+		return resolutionFile;
 	}
 
-	public void setResolutionUrl(String resolutionUrl) {
-		this.resolutionUrl = resolutionUrl;
+	public void setResolutionFile(StoredFile resolutionFile) {
+		this.resolutionFile = resolutionFile;
 	}
 
 	public String getObservations() {
@@ -106,5 +133,15 @@ public class Enrollment extends BaseEntity {
 
 	public void setObservations(String observations) {
 		this.observations = observations;
+	}
+
+	@Override
+	public UUID getAuditId() {
+		return id;
+	}
+
+	@Override
+	public Set<String> auditFields() {
+		return AUDIT_FIELDS;
 	}
 }

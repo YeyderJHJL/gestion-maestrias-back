@@ -1,0 +1,2 @@
+ALTER TABLE teachers
+ADD COLUMN university VARCHAR(255);

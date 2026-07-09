@@ -16,7 +16,7 @@ Out of scope: undergraduate degrees and titles.
 | Spring Security (OAuth2 Resource Server) | 7.x |
 | PostgreSQL | 18-alpine (Docker) |
 | Flyway | 11.x (managed by Spring Boot) |
-| Gradle | 9.4.1 |
+| Gradle | 9.4.1 (wrapper included; run via Docker for project checks) |
 | SpringDoc OpenAPI | 3.0.2 |
 | Spring Cloud GCP | 8.0.3 |
 
@@ -27,10 +27,11 @@ Out of scope: undergraduate degrees and titles.
 ```bash
 docker compose -f compose.dev.yml up --build   # start dev environment (API + PostgreSQL + fake GCS + frontend test page)
 docker compose -f compose.dev.yml logs -f api  # tail API logs
+docker compose -f compose.dev.yml exec api ./gradlew test # run tests inside Docker
 docker exec masters-db psql -U root -d postgres # connect to DB
 ```
 
-Tests and builds run **inside Docker** — there is no local Gradle wrapper JAR in the repo.
+The Gradle wrapper is present, but tests and builds should run **inside Docker** so Java 25 and the dev services match the project environment.
 
 ## Critical conventions
 
@@ -45,6 +46,7 @@ Tests and builds run **inside Docker** — there is no local Gradle wrapper JAR 
 9. **Default role = ADMIN** — every endpoint is ADMIN-only unless annotated with `@Authorize` or `@Public`. See `skills/roles/SKILL.md`.
 10. **Personal data lives in `users`** — `first_name`, `last_name`, `dni` are on the `users` table, not on `teachers` or `students`.
 11. **`SecurityHelper.currentUserId()`** — the canonical way to get the authenticated user's UUID inside controllers and services. Never inject `Authentication` directly.
+12. **File references use `stored_files.id`** — domain tables reference uploaded files by FK (`id_syllabus_file`, `id_resolution_file`, `id_file`). Never store GCS URLs in domain tables.
 
 ## Package structure (package by feature)
 
@@ -55,10 +57,12 @@ src/main/java/com/claudecoders/masters/
 │   ├── audit/          BaseEntity, CreatedEntity
 │   ├── config/         OpenApiConfig, SecurityConfig (dev/test), ProdSecurityConfig, WebConfig
 │   ├── exception/      ApiError, ApiResponse, BusinessException,
-│   │                   GlobalExceptionHandler, ResourceNotFoundException
+│   │                   GlobalExceptionHandler, ResourceNotFoundException,
+│   │                   UnauthorizedException
 │   ├── security/       @Authorize, @Public, AppJwtAuthenticationConverter,
 │   │                   AppUserPrincipal, RolesEnforcementAspect,
-│   │                   RolesOperationCustomizer, SecurityHelper
+│   │                   RolesOperationCustomizer, SecurityExceptionResponder,
+│   │                   SecurityHelper
 │   ├── seed/           DatabaseSeeder
 │   ├── storage/        GcsStorageService
 │   └── enums/          LabeledEnum
@@ -82,6 +86,8 @@ src/main/java/com/claudecoders/masters/
 
 ## Available skills
 
+Project skills are registered in `opencode.json` via `skills.paths: ["skills"]`.
+
 - **`skills/architecture/SKILL.md`** — entities, repositories, services, controllers, DTOs, enums, BaseEntity, UUID v7, soft delete patterns.
 - **`skills/database/SKILL.md`** — Flyway migrations, ID strategy, soft delete with partial indexes, PostgreSQL enums, `stored_files` table, query patterns.
 - **`skills/error-handling/SKILL.md`** — `ApiResponse<T>` / `ApiError` shapes, exception hierarchy, `GlobalExceptionHandler`, HTTP codes, response body examples.
@@ -93,7 +99,7 @@ src/main/java/com/claudecoders/masters/
 Create a new file — never modify an existing one:
 
 ```
-src/main/resources/db/migration/V2__your_description.sql
+src/main/resources/db/migration/V{next}__your_description.sql
 ```
 
 Flyway runs automatically on startup and applies pending migrations.
@@ -101,7 +107,7 @@ Flyway runs automatically on startup and applies pending migrations.
 ## Definition of Done
 
 A task is complete when:
-1. `./gradlew test` passes (run inside Docker with compose.dev.yml running).
+1. `docker compose -f compose.dev.yml exec api ./gradlew test` passes with `compose.dev.yml` running.
 2. New endpoints have `@Operation` + `@Tag`, return `ApiResponse<T>` (or 204), and validate input with `@Valid`.
 3. New entities extend `BaseEntity` or `CreatedEntity`, use the correct PK type (UUID v7 for business, IDENTITY for catalogs), and have `@SQLDelete` + `@SQLRestriction` if they have `deleted_at`.
 4. Services use constructor injection and `@Transactional`.

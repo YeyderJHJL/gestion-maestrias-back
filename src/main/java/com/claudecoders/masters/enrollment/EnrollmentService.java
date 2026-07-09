@@ -4,6 +4,10 @@ import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.course.CourseService;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
+import com.claudecoders.masters.file.FilePurpose;
+import com.claudecoders.masters.file.StoredFileService;
+import com.claudecoders.masters.semester.Semester;
+import com.claudecoders.masters.semester.SemesterService;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.state.State;
@@ -23,17 +27,23 @@ public class EnrollmentService {
 	private final StudentService studentService;
 	private final CourseService courseService;
 	private final StateService stateService;
+	private final StoredFileService storedFileService;
+	private final SemesterService semesterService;
 
 	public EnrollmentService(
 			EnrollmentRepository enrollmentRepository,
 			StudentService studentService,
 			CourseService courseService,
-			StateService stateService
+			StateService stateService,
+			StoredFileService storedFileService,
+			SemesterService semesterService
 	) {
 		this.enrollmentRepository = enrollmentRepository;
 		this.studentService = studentService;
 		this.courseService = courseService;
 		this.stateService = stateService;
+		this.storedFileService = storedFileService;
+		this.semesterService = semesterService;
 	}
 
 	@Transactional(readOnly = true)
@@ -50,6 +60,9 @@ public class EnrollmentService {
 
 	@Transactional
 	public EnrollmentResponse create(EnrollmentRequest request) {
+		if (enrollmentRepository.existsByStudent_IdAndCourse_Id(request.studentId(), request.courseId())) {
+			throw new BusinessException("El estudiante ya está matriculado en este curso");
+		}
 		Enrollment enrollment = new Enrollment();
 		applyRequest(enrollment, request);
 		return toResponse(enrollmentRepository.save(enrollment));
@@ -72,6 +85,32 @@ public class EnrollmentService {
 		return findEntity(id);
 	}
 
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByCourse(UUID courseId) {
+    courseService.getReference(courseId); // valida que el curso exista
+    return enrollmentRepository.findByCourse_IdOrderByEnrollmentDateAsc(courseId)
+          .stream()
+          .map(this::toResponse)
+          .toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByStudent(UUID studentId) {
+		studentService.getReference(studentId); // valida que el estudiante exista
+		return enrollmentRepository.findByStudent_IdOrderByEnrollmentDateAsc(studentId)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<EnrollmentResponse> findByPromotion(Integer yearPromotion) {
+		return enrollmentRepository.findByStudent_YearPromotionOrderByEnrollmentDateAsc(yearPromotion)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
 	private Enrollment findEntity(UUID id) {
 		return enrollmentRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
@@ -80,15 +119,16 @@ public class EnrollmentService {
 	private void applyRequest(Enrollment enrollment, EnrollmentRequest request) {
 		Student student = studentService.getReference(request.studentId());
 		Course course = courseService.getReference(request.courseId());
-		if (!student.getPromotion().getId().equals(course.getPromotion().getId())) {
-			throw new BusinessException("Student and course must belong to the same promotion");
-		}
+		Semester semester = semesterService.getReference(request.semesterId());
 		State state = stateService.getReference(request.stateId());
 		enrollment.setStudent(student);
 		enrollment.setCourse(course);
+		enrollment.setSemester(semester);
 		enrollment.setState(state);
 		enrollment.setEnrollmentDate(request.enrollmentDate());
-		enrollment.setResolutionUrl(request.resolutionUrl());
+		enrollment.setResolutionFile(request.resolutionFileId() == null
+				? null
+				: storedFileService.getReference(request.resolutionFileId(), FilePurpose.ENROLLMENT_RESOLUTION));
 		enrollment.setObservations(request.observations());
 	}
 
@@ -96,6 +136,7 @@ public class EnrollmentService {
 		Student student = enrollment.getStudent();
 		User user = student.getUser();
 		Course course = enrollment.getCourse();
+		Semester semester = enrollment.getSemester();
 		State state = enrollment.getState();
 		return new EnrollmentResponse(
 				enrollment.getId(),
@@ -105,11 +146,14 @@ public class EnrollmentService {
 				course.getId(),
 				course.getCode(),
 				course.getName(),
+				semester.getId(),
+				semester.getYear(),
+				semester.getCode(),
 				state.getId(),
 				state.getCode(),
 				state.getName(),
 				enrollment.getEnrollmentDate(),
-				enrollment.getResolutionUrl(),
+				storedFileService.toSummary(enrollment.getResolutionFile()),
 				enrollment.getObservations(),
 				enrollment.getCreatedAt(),
 				enrollment.getUpdatedAt()

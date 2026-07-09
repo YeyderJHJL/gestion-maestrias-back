@@ -8,7 +8,7 @@
 --   - INTEGER / BIGINT GENERATED ALWAYS AS IDENTITY para PKs incrementales
 --   - Soft delete vía deleted_at; unique se aplica como partial index
 --   - Constraints CHECK e índices solo en casos críticos
--- =============================================================================
+-- ===============================================================&==============
 
 
 -- =============================================================================

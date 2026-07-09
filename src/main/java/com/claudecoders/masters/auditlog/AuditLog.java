@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -33,7 +32,7 @@ public class AuditLog extends CreatedEntity {
 	private String entityType;
 
 	@Column(name = "id_entity", nullable = false)
-	private UUID entityId;
+	private String entityId;
 
 	@Column(name = "action", nullable = false, length = 100)
 	private String action;
@@ -70,11 +69,11 @@ public class AuditLog extends CreatedEntity {
 		this.entityType = entityType;
 	}
 
-	public UUID getEntityId() {
+	public String getEntityId() {
 		return entityId;
 	}
 
-	public void setEntityId(UUID entityId) {
+	public void setEntityId(String entityId) {
 		this.entityId = entityId;
 	}
 

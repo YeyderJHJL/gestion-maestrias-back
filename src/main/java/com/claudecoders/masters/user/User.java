@@ -41,7 +41,7 @@ public class User extends BaseEntity implements Auditable {
 	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
-	@Column(name = "google_sub", nullable = false, length = 255)
+	@Column(name = "google_sub", length = 255)
 	private String googleSub;
 
 	@Column(name = "email", nullable = false, length = 255)
