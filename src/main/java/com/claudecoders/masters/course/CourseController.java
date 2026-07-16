@@ -8,6 +8,7 @@ import com.claudecoders.masters.enrollment.EnrollmentService;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,7 +58,7 @@ public class CourseController {
 		description = "Get course by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<CourseResponse> findById(@PathVariable UUID id) {
-		return ApiResponse.ok(courseService.findById(id));
+		return ApiResponse.ok(courseService.findById(id, SecurityHelper.currentUserId()));
 	}
 
   @Operation(summary = "Get teachers by course")

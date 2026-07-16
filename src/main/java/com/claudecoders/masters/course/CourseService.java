@@ -2,8 +2,13 @@ package com.claudecoders.masters.course;
 
 import com.claudecoders.masters.course.dto.CourseRequest;
 import com.claudecoders.masters.course.dto.CourseResponse;
+import com.claudecoders.masters.enrollment.EnrollmentRepository;
+import com.claudecoders.masters.shared.enums.UserRole;
+import org.springframework.security.access.AccessDeniedException;
 import com.claudecoders.masters.shared.exception.BusinessException;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
+import com.claudecoders.masters.user.User;
+import com.claudecoders.masters.user.UserService;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -12,10 +17,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CourseService {
 
-	private final CourseRepository courseRepository;
+	private static final String ENROLLED_STATE_CODE = "ENROLLED";
 
-	public CourseService(CourseRepository courseRepository) {
+	private final CourseRepository courseRepository;
+	private final EnrollmentRepository enrollmentRepository;
+	private final UserService userService;
+
+	public CourseService(
+			CourseRepository courseRepository,
+			EnrollmentRepository enrollmentRepository,
+			UserService userService
+	) {
 		this.courseRepository = courseRepository;
+		this.enrollmentRepository = enrollmentRepository;
+		this.userService = userService;
 	}
 
 	@Transactional(readOnly = true)
@@ -26,8 +41,10 @@ public class CourseService {
 	}
 
 	@Transactional(readOnly = true)
-	public CourseResponse findById(UUID id) {
-		return toResponse(findEntity(id));
+	public CourseResponse findById(UUID id, UUID userId) {
+		Course course = findEntity(id);
+		checkAccess(course.getId(), userId);
+		return toResponse(course);
 	}
 
 	@Transactional
@@ -52,6 +69,18 @@ public class CourseService {
 	@Transactional(readOnly = true)
 	public Course getReference(UUID id) {
 		return findEntity(id);
+	}
+
+	private void checkAccess(UUID courseId, UUID userId) {
+		User user = userService.getReference(userId);
+
+		if (user.getRole() == UserRole.STUDENT) {
+			boolean enrolled = enrollmentRepository
+					.existsByStudent_User_IdAndCourse_IdAndState_Code(userId, courseId, ENROLLED_STATE_CODE);
+			if (!enrolled) {
+				throw new AccessDeniedException("No tienes una matrícula activa en este curso");
+			}
+		}
 	}
 
 	private Course findEntity(UUID id) {

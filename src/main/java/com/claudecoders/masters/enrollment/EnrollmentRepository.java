@@ -12,4 +12,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
   List<Enrollment> findByStudent_YearPromotionOrderByEnrollmentDateAsc(Integer yearPromotion);
 
   boolean existsByStudent_IdAndCourse_Id(UUID studentId, UUID courseId);
+
+  boolean existsByStudent_User_IdAndCourse_IdAndState_Code(UUID userId, UUID courseId, String stateCode);
 }
