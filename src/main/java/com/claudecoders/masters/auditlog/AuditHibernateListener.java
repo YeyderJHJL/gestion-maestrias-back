@@ -99,6 +99,17 @@ public class AuditHibernateListener implements PostInsertEventListener, PostUpda
 			Map<String, Object> oldValues,
 			Map<String, Object> newValues
 	) {
+    String reason = AuditContext.getReason();
+
+    final Map<String, Object> auditOldValues;
+
+    if (reason != null && !reason.isBlank()) {
+			Map<String, Object> map = new LinkedHashMap<>(oldValues);
+			map.put("reason", reason);
+			auditOldValues = map;
+    } else {
+			auditOldValues = oldValues;
+    }
 		if (oldValues.isEmpty() && newValues.isEmpty()) {
 			return;
 		}
@@ -108,7 +119,7 @@ public class AuditHibernateListener implements PostInsertEventListener, PostUpda
 						auditable.getAuditType(),
 						auditable.getAuditId(),
 						action,
-						oldValues,
+						auditOldValues,
 						newValues
 				)));
 	}

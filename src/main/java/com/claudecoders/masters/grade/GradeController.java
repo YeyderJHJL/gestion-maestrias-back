@@ -2,6 +2,7 @@ package com.claudecoders.masters.grade;
 
 import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
+import com.claudecoders.masters.grade.dto.GradeUpdateRequest;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -73,7 +75,7 @@ public class GradeController {
 	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER},
 		description = "Update a grade (only ADMIN and TEACHER can access)")
 	@PutMapping("/{id}")
-	public ApiResponse<GradeResponse> update(@PathVariable UUID id, @Valid @RequestBody GradeRequest request) {
+	public ApiResponse<GradeResponse> update(@PathVariable UUID id, @Valid @RequestBody GradeUpdateRequest request) {
 		return ApiResponse.ok(gradeService.update(id, request, SecurityHelper.currentUserId()), "Grade updated");
 	}
 
@@ -81,8 +83,8 @@ public class GradeController {
 	@Authorize(roles = {UserRole.ADMIN},
 		description = "Delete a grade (only ADMIN can access)")
 	@DeleteMapping("/{id}")
-	public ApiResponse<Void> delete(@PathVariable UUID id) {
-		gradeService.delete(id, SecurityHelper.currentUserId());
+	public ApiResponse<Void> delete(@PathVariable UUID id, @RequestParam @NotBlank String reason) {
+		gradeService.delete(id, reason, SecurityHelper.currentUserId());
 		return ApiResponse.ok(null, "Grade deleted");
 	}
 }
