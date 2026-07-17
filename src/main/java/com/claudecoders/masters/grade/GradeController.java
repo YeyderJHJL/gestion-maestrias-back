@@ -4,6 +4,7 @@ import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,7 +49,7 @@ public class GradeController {
 		@Parameter(description = "Filter by student ID", example = "550e8400-e29b-41d4-a716-446655440000")
 		@RequestParam(required = false) UUID studentId) {
 
-		return ApiResponse.ok(gradeService.findAll(enrollmentId, courseId, studentId));
+		return ApiResponse.ok(gradeService.findAll(enrollmentId, courseId, studentId, SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "Get grade by id")
@@ -56,7 +57,7 @@ public class GradeController {
 		description = "Get grade by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<GradeResponse> findById(@PathVariable UUID id) {
-		return ApiResponse.ok(gradeService.findById(id));
+		return ApiResponse.ok(gradeService.findById(id, SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "Create grade")
@@ -65,7 +66,7 @@ public class GradeController {
 	@PostMapping
 	public ResponseEntity<ApiResponse<GradeResponse>> create(@Valid @RequestBody GradeRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponse.ok(gradeService.create(request), "Grade created"));
+				.body(ApiResponse.ok(gradeService.create(request, SecurityHelper.currentUserId()), "Grade created"));
 	}
 
 	@Operation(summary = "Update grade")
@@ -73,7 +74,7 @@ public class GradeController {
 		description = "Update a grade (only ADMIN and TEACHER can access)")
 	@PutMapping("/{id}")
 	public ApiResponse<GradeResponse> update(@PathVariable UUID id, @Valid @RequestBody GradeRequest request) {
-		return ApiResponse.ok(gradeService.update(id, request), "Grade updated");
+		return ApiResponse.ok(gradeService.update(id, request, SecurityHelper.currentUserId()), "Grade updated");
 	}
 
 	@Operation(summary = "Delete grade")
@@ -81,7 +82,7 @@ public class GradeController {
 		description = "Delete a grade (only ADMIN can access)")
 	@DeleteMapping("/{id}")
 	public ApiResponse<Void> delete(@PathVariable UUID id) {
-		gradeService.delete(id);
+		gradeService.delete(id, SecurityHelper.currentUserId());
 		return ApiResponse.ok(null, "Grade deleted");
 	}
 }
