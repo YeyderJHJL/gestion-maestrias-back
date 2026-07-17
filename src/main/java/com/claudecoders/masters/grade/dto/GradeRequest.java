@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Schema(description = "Grade create/update request")
 public record GradeRequest(
-		@NotNull UUID 	,
+		@NotNull UUID enrollmentId,
 		@NotNull Integer stateId,
 		@NotNull @Min(0) @Max(20) Short value
 ) {
