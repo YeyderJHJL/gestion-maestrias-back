@@ -3,6 +3,7 @@ package com.claudecoders.masters.grade;
 import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.enrollment.Enrollment;
 import com.claudecoders.masters.enrollment.EnrollmentService;
+import com.claudecoders.masters.course.CourseService;
 import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
@@ -20,45 +21,56 @@ public class GradeService {
 	private final GradeRepository gradeRepository;
 	private final EnrollmentService enrollmentService;
 	private final StateService stateService;
+	private final CourseService courseService;
 
 	public GradeService(
 			GradeRepository gradeRepository,
 			EnrollmentService enrollmentService,
-			StateService stateService
+			StateService stateService,
+			CourseService courseService
 	) {
 		this.gradeRepository = gradeRepository;
 		this.enrollmentService = enrollmentService;
 		this.stateService = stateService;
+		this.courseService = courseService;
 	}
 
 	@Transactional(readOnly = true)
-	public List<GradeResponse> findAll(UUID enrollmentId, UUID courseId, UUID studentId) {
+	public List<GradeResponse> findAll(UUID enrollmentId, UUID courseId, UUID studentId, UUID currentUserId) {
+			courseService.checkAccess(courseId, currentUserId);
 			return gradeRepository.findAllWithFilters(enrollmentId, courseId, studentId)
 							.stream()
 							.map(this::toResponse)
 							.toList();
 	}
 	@Transactional(readOnly = true)
-	public GradeResponse findById(UUID id) {
+	public GradeResponse findById(UUID id, UUID currentUserId) {
+		Grade grade = findEntity(id);
+		courseService.checkAccess(grade.getEnrollment().getCourse().getId(), currentUserId);
 		return toResponse(findEntity(id));
 	}
 
 	@Transactional
-	public GradeResponse create(GradeRequest request) {
+	public GradeResponse create(GradeRequest request, UUID currentUserId) {
 		Grade grade = new Grade();
+		Enrollment enrollment = enrollmentService.getReference(request.enrollmentId());
+		courseService.checkAccess(enrollment.getCourse().getId(), currentUserId);
 		applyRequest(grade, request);
 		return toResponse(gradeRepository.save(grade));
 	}
 
 	@Transactional
-	public GradeResponse update(UUID id, GradeRequest request) {
+	public GradeResponse update(UUID id, GradeRequest request, UUID currentUserId) {
 		Grade grade = findEntity(id);
+		courseService.checkAccess(grade.getEnrollment().getCourse().getId(), currentUserId);
 		applyRequest(grade, request);
 		return toResponse(gradeRepository.save(grade));
 	}
 
 	@Transactional
-	public void delete(UUID id) {
+	public void delete(UUID id, UUID currentUserId) {
+		Grade grade = findEntity(id);
+		courseService.checkAccess(grade.getEnrollment().getCourse().getId(), currentUserId);
 		gradeRepository.delete(findEntity(id));
 	}
 
