@@ -86,8 +86,9 @@ public class EnrollmentService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<EnrollmentResponse> findByCourse(UUID courseId) {
-    courseService.getReference(courseId); // valida que el curso exista
+	public List<EnrollmentResponse> findByCourse(UUID courseId, UUID userId) {
+    courseService.getReference(courseId);
+		courseService.checkAccess(courseId, userId);
     return enrollmentRepository.findByCourse_IdOrderByEnrollmentDateAsc(courseId)
           .stream()
           .map(this::toResponse)

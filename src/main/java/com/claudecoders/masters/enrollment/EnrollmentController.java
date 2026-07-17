@@ -4,6 +4,7 @@ import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,7 +48,7 @@ public class EnrollmentController {
 			return ApiResponse.ok(enrollmentService.findByStudent(studentId));
 		}
 		if (courseId != null) {
-			return ApiResponse.ok(enrollmentService.findByCourse(courseId));
+			return ApiResponse.ok(enrollmentService.findByCourse(courseId, SecurityHelper.currentUserId()));
 		}
 		if (yearPromotion != null) {
 			return ApiResponse.ok(enrollmentService.findByPromotion(yearPromotion));
