@@ -3,6 +3,7 @@ package com.claudecoders.masters.course;
 import com.claudecoders.masters.course.dto.CourseRequest;
 import com.claudecoders.masters.course.dto.CourseResponse;
 import com.claudecoders.masters.enrollment.EnrollmentRepository;
+import com.claudecoders.masters.assignment.AssignmentRepository;
 import com.claudecoders.masters.shared.enums.UserRole;
 import org.springframework.security.access.AccessDeniedException;
 import com.claudecoders.masters.shared.exception.BusinessException;
@@ -21,15 +22,18 @@ public class CourseService {
 
 	private final CourseRepository courseRepository;
 	private final EnrollmentRepository enrollmentRepository;
+	private final AssignmentRepository assignmentRepository;
 	private final UserService userService;
 
 	public CourseService(
 			CourseRepository courseRepository,
 			EnrollmentRepository enrollmentRepository,
+			AssignmentRepository assignmentRepository,
 			UserService userService
 	) {
 		this.courseRepository = courseRepository;
 		this.enrollmentRepository = enrollmentRepository;
+		this.assignmentRepository = assignmentRepository;
 		this.userService = userService;
 	}
 
@@ -71,14 +75,36 @@ public class CourseService {
 		return findEntity(id);
 	}
 
-	private void checkAccess(UUID courseId, UUID userId) {
+	@Transactional(readOnly = true)
+	public void checkAccess(UUID courseId, UUID userId) {
 		User user = userService.getReference(userId);
+
+		// ADMIN y COORDINATOR tienen acceso a todos los cursos
+		if (user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.COORDINATOR) {
+			return;
+		}
 
 		if (user.getRole() == UserRole.STUDENT) {
 			boolean enrolled = enrollmentRepository
-					.existsByStudent_User_IdAndCourse_IdAndState_Code(userId, courseId, ENROLLED_STATE_CODE);
+					.existsByStudent_User_IdAndCourse_IdAndState_Code(
+							userId,
+							courseId,
+							ENROLLED_STATE_CODE
+					);
+
 			if (!enrolled) {
 				throw new AccessDeniedException("No tienes una matrícula activa en este curso");
+			}
+
+			return;
+		}
+
+		if (user.getRole() == UserRole.TEACHER) {
+			boolean assigned = assignmentRepository
+					.existsByCourse_IdAndTeacher_User_Id(courseId, userId);
+
+			if (!assigned) {
+				throw new AccessDeniedException("No tienes asignado este curso");
 			}
 		}
 	}

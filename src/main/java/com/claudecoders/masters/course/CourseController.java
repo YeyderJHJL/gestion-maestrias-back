@@ -66,7 +66,7 @@ public class CourseController {
   	description = "Get teachers assigned to a course")
   @GetMapping("/{id}/teachers")
   public ApiResponse<List<AssignmentResponse>> findTeachersByCourse(@PathVariable UUID id) {
-    return ApiResponse.ok(assignmentService.findByCourse(id));
+    return ApiResponse.ok(assignmentService.findByCourse(id, SecurityHelper.currentUserId()));
   }
 
   @Operation(summary = "Get students by course")
@@ -74,7 +74,7 @@ public class CourseController {
     description = "Get students enrolled in a course (only ADMIN, COORDINATOR and TEACHER can access)")
   @GetMapping("/{id}/students")
   public ApiResponse<List<EnrollmentResponse>> findStudentsByCourse(@PathVariable UUID id) {
-    return ApiResponse.ok(enrollmentService.findByCourse(id));
+    return ApiResponse.ok(enrollmentService.findByCourse(id, SecurityHelper.currentUserId()));
   }
 
 	@Operation(summary = "Get courses by teacher")
