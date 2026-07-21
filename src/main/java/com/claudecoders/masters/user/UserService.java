@@ -169,6 +169,8 @@ public class UserService {
 	public void delete(UUID id) {
 		User user = findEntity(id);
 		userAccountService.evictUser(user.getGoogleSub());
+		teacherRepository.findByUser_Id(id).ifPresent(teacherRepository::delete);
+		studentRepository.findByUser_Id(id).ifPresent(studentRepository::delete);
 		userRepository.delete(user);
 	}
 

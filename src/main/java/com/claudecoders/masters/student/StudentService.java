@@ -94,7 +94,18 @@ public class StudentService {
 
 	@Transactional
 	public void delete(UUID id) {
-		studentRepository.delete(findEntity(id));
+		Student student = findEntity(id);
+		userService.delete(student.getUser().getId());
+	}
+
+	@Transactional
+	public void deleteBulk(List<UUID> idStudents) {
+		List<UUID> userIds = idStudents.stream()
+				.distinct()
+				.map(this::findEntity)
+				.map(student -> student.getUser().getId())
+				.toList();
+		userIds.forEach(userService::delete);
 	}
 
 	@Transactional(readOnly = true)

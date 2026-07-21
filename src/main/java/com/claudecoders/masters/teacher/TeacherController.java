@@ -140,4 +140,13 @@ public class TeacherController {
 		teacherService.delete(id);
 		return ApiResponse.ok(null, "Teacher deleted");
 	}
+
+	@Operation(summary = "Bulk delete teachers")
+	@Authorize(roles = {UserRole.ADMIN},
+			description = "Soft-delete teachers and their associated user accounts (only ADMIN can access)")
+	@DeleteMapping("/bulk")
+	public ApiResponse<Void> deleteBulk(@Valid @Size(min = 1) @RequestBody List<@NotNull UUID> idTeachers) {
+		teacherService.deleteBulk(idTeachers);
+		return ApiResponse.ok(null, "Teachers deleted");
+	}
 }

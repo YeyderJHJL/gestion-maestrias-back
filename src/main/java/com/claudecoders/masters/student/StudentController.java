@@ -121,6 +121,15 @@ public class StudentController {
 		return ApiResponse.ok(null, "Student deleted");
 	}
 
+	@Operation(summary = "Bulk delete students")
+	@Authorize(roles = {UserRole.ADMIN},
+		description = "Soft-delete students and their associated user accounts (only ADMIN can access)")
+	@DeleteMapping("/bulk")
+	public ApiResponse<Void> deleteBulk(@Valid @Size(min = 1) @RequestBody List<@NotNull UUID> idStudents) {
+		studentService.deleteBulk(idStudents);
+		return ApiResponse.ok(null, "Students deleted");
+	}
+
 	@Operation(summary = "Bulk import students from JSON (RF-MA-18)")
 	@Authorize(roles = {UserRole.ADMIN},
 		description = "Bulk-import students from a JSON list (frontend pre-processes the Excel).")

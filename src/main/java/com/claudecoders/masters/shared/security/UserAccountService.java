@@ -37,7 +37,7 @@ public class UserAccountService {
 		return new CachedPrincipal(user.getId(), user.getRole());
 	}
 
-	@CacheEvict(value = "userPrincipals", key = "#googleSub")
+	@CacheEvict(value = "userPrincipals", key = "#googleSub", condition = "#googleSub != null")
 	public void evictUser(String googleSub) {}
 
 	private User linkGoogleSub(User user, String googleSub, String givenName, String familyName) {
