@@ -6,10 +6,12 @@ import com.claudecoders.masters.enrollment.EnrollmentService;
 import com.claudecoders.masters.course.CourseService;
 import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
+import com.claudecoders.masters.grade.dto.GradeUpdateRequest;
 import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.state.State;
 import com.claudecoders.masters.state.StateService;
 import com.claudecoders.masters.student.Student;
+import com.claudecoders.masters.auditlog.AuditContext;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -60,18 +62,34 @@ public class GradeService {
 	}
 
 	@Transactional
-	public GradeResponse update(UUID id, GradeRequest request, UUID currentUserId) {
+	public GradeResponse update(UUID id, GradeUpdateRequest request, UUID currentUserId) {
 		Grade grade = findEntity(id);
 		courseService.checkAccess(grade.getEnrollment().getCourse().getId(), currentUserId);
-		applyRequest(grade, request);
-		return toResponse(gradeRepository.save(grade));
+
+		AuditContext.setReason(request.reason());
+
+		try {
+			applyRequest(grade, request);
+			Grade saved = gradeRepository.saveAndFlush(grade);
+			return toResponse(saved);
+		} finally {
+			AuditContext.clear();
+		}
 	}
 
 	@Transactional
-	public void delete(UUID id, UUID currentUserId) {
+	public void delete(UUID id, String reason, UUID currentUserId) {
 		Grade grade = findEntity(id);
 		courseService.checkAccess(grade.getEnrollment().getCourse().getId(), currentUserId);
-		gradeRepository.delete(findEntity(id));
+
+		AuditContext.setReason(reason);
+
+		try {
+			gradeRepository.delete(grade);
+			gradeRepository.flush();
+		} finally {
+			AuditContext.clear();
+		}
 	}
 
 	private Grade findEntity(UUID id) {
@@ -80,6 +98,14 @@ public class GradeService {
 	}
 
 	private void applyRequest(Grade grade, GradeRequest request) {
+		Enrollment enrollment = enrollmentService.getReference(request.enrollmentId());
+		State state = stateService.getReference(request.stateId());
+		grade.setEnrollment(enrollment);
+		grade.setState(state);
+		grade.setValue(request.value());
+	}
+
+	private void applyRequest(Grade grade, GradeUpdateRequest request) {
 		Enrollment enrollment = enrollmentService.getReference(request.enrollmentId());
 		State state = stateService.getReference(request.stateId());
 		grade.setEnrollment(enrollment);
