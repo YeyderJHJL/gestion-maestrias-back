@@ -21,6 +21,7 @@ import com.claudecoders.masters.user.dto.UserCreateRequest;
 import com.claudecoders.masters.user.dto.UserRequest;
 import com.claudecoders.masters.user.dto.UserProfileResponse;
 import com.claudecoders.masters.user.dto.UserResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -318,11 +319,15 @@ public class UserService {
 	private void createInitialPayments(Student student) {
 		Program program = programRepository.findFirstByOrderByIdAsc()
 				.orElseThrow(() -> new BusinessException("Debe existir un programa configurado para generar pagos"));
+		// Provisional: este monto deberá provenir de la configuración del programa.
+		final BigDecimal paymentAmount = new BigDecimal("420.00");
 
 		for (int number = 1; number <= program.getPensionCount(); number++) {
 			Payment payment = new Payment();
 			payment.setStudent(student);
 			payment.setPaymentNumber(number);
+			payment.setConcept(number == 1 ? "Matrícula" : "Pensión N° " + number);
+			payment.setAmount(paymentAmount);
 			paymentRepository.save(payment);
 		}
 	}

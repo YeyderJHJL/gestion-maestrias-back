@@ -53,7 +53,7 @@ public class Payment extends BaseEntity implements Auditable {
 	@Column(name = "concept", length = 255)
 	private String concept;
 
-	@Column(name = "amount", precision = 10, scale = 2)
+	@Column(name = "amount", nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;
 
 	public UUID getId() {

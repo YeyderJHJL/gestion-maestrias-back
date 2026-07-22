@@ -1,7 +1,6 @@
 package com.claudecoders.masters.voucher;
 
 import com.claudecoders.masters.file.StoredFile;
-import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
@@ -12,7 +11,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
@@ -27,7 +30,7 @@ import org.hibernate.annotations.UuidGenerator.Style;
 public class Voucher extends BaseEntity implements Auditable {
 
 	private static final Set<String> AUDIT_FIELDS = Set.of(
-			"payment",
+			"declaredAmount",
 			"state",
 			"file",
 			"observation"
@@ -39,9 +42,11 @@ public class Voucher extends BaseEntity implements Auditable {
 	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_payment", nullable = false)
-	private Payment payment;
+	@Column(name = "declared_amount", nullable = false, precision = 10, scale = 2)
+	private BigDecimal declaredAmount;
+
+	@OneToMany(mappedBy = "voucher", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+	private List<VoucherPayment> payments = new ArrayList<>();
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "id_state", nullable = false)
@@ -62,12 +67,16 @@ public class Voucher extends BaseEntity implements Auditable {
 		this.id = id;
 	}
 
-	public Payment getPayment() {
-		return payment;
+	public BigDecimal getDeclaredAmount() {
+		return declaredAmount;
 	}
 
-	public void setPayment(Payment payment) {
-		this.payment = payment;
+	public void setDeclaredAmount(BigDecimal declaredAmount) {
+		this.declaredAmount = declaredAmount;
+	}
+
+	public List<VoucherPayment> getPayments() {
+		return payments;
 	}
 
 	public State getState() {

@@ -5,8 +5,8 @@ import com.claudecoders.masters.shared.exception.ResourceNotFoundException;
 import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.student.Student;
 import com.claudecoders.masters.student.StudentService;
-import com.claudecoders.masters.voucher.Voucher;
-import com.claudecoders.masters.voucher.VoucherRepository;
+import com.claudecoders.masters.voucher.VoucherPayment;
+import com.claudecoders.masters.voucher.VoucherPaymentRepository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -16,16 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
-	private final VoucherRepository voucherRepository;
+	private final VoucherPaymentRepository voucherPaymentRepository;
 	private final StudentService studentService;
 
 	public PaymentService(
 			PaymentRepository paymentRepository,
-			VoucherRepository voucherRepository,
+			VoucherPaymentRepository voucherPaymentRepository,
 			StudentService studentService
 	) {
 		this.paymentRepository = paymentRepository;
-		this.voucherRepository = voucherRepository;
+		this.voucherPaymentRepository = voucherPaymentRepository;
 		this.studentService = studentService;
 	}
 
@@ -44,9 +44,10 @@ public class PaymentService {
 	}
 
 	private PaymentResponse toResponse(Payment payment) {
-		String latestVoucherStateCode = voucherRepository
-				.findFirstByPayment_IdOrderByCreatedAtDesc(payment.getId())
-				.map(Voucher::getState)
+		String latestVoucherStateCode = voucherPaymentRepository
+				.findFirstByPayment_IdOrderByVoucher_CreatedAtDesc(payment.getId())
+				.map(VoucherPayment::getVoucher)
+				.map(voucher -> voucher.getState())
 				.map(state -> state.getCode())
 				.orElse(null);
 		return new PaymentResponse(
