@@ -2,6 +2,9 @@ package com.claudecoders.masters.enrollment;
 
 import com.claudecoders.masters.course.Course;
 import com.claudecoders.masters.course.CourseService;
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkRequest;
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkResponse;
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkRowResult;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.file.FilePurpose;
@@ -15,10 +18,14 @@ import com.claudecoders.masters.state.StateService;
 import com.claudecoders.masters.student.Student;
 import com.claudecoders.masters.student.StudentService;
 import com.claudecoders.masters.user.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class EnrollmentService {
@@ -29,6 +36,7 @@ public class EnrollmentService {
 	private final StateService stateService;
 	private final StoredFileService storedFileService;
 	private final SemesterService semesterService;
+	private final TransactionTemplate transactionTemplate;
 
 	public EnrollmentService(
 			EnrollmentRepository enrollmentRepository,
@@ -36,7 +44,8 @@ public class EnrollmentService {
 			CourseService courseService,
 			StateService stateService,
 			StoredFileService storedFileService,
-			SemesterService semesterService
+			SemesterService semesterService,
+			PlatformTransactionManager transactionManager
 	) {
 		this.enrollmentRepository = enrollmentRepository;
 		this.studentService = studentService;
@@ -44,6 +53,8 @@ public class EnrollmentService {
 		this.stateService = stateService;
 		this.storedFileService = storedFileService;
 		this.semesterService = semesterService;
+		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
 
 	@Transactional(readOnly = true)
@@ -66,6 +77,47 @@ public class EnrollmentService {
 		Enrollment enrollment = new Enrollment();
 		applyRequest(enrollment, request);
 		return toResponse(enrollmentRepository.save(enrollment));
+	}
+
+	public EnrollmentBulkResponse createBulk(EnrollmentBulkRequest request) {
+		List<EnrollmentBulkRowResult> results = new ArrayList<>();
+		int enrolled = 0;
+		int rejected = 0;
+		List<UUID> studentIds = request.studentIds();
+		for (int i = 0; i < studentIds.size(); i++) {
+			UUID studentId = studentIds.get(i);
+			int rowNumber = i + 1;
+			EnrollmentRequest row = new EnrollmentRequest(
+					studentId,
+					request.courseId(),
+					request.semesterId(),
+					request.stateId(),
+					request.enrollmentDate(),
+					request.resolutionFileId(),
+					request.observations()
+			);
+			try {
+				EnrollmentResponse saved = transactionTemplate.execute(status -> create(row));
+				enrolled++;
+				results.add(new EnrollmentBulkRowResult(
+						rowNumber, studentId, EnrollmentBulkRowResult.Status.ENROLLED,
+						saved.id(), List.of()));
+			} catch (RuntimeException ex) {
+				rejected++;
+				results.add(new EnrollmentBulkRowResult(
+						rowNumber, studentId, EnrollmentBulkRowResult.Status.REJECTED,
+						null, List.of(rootMessage(ex))));
+			}
+		}
+		return new EnrollmentBulkResponse(results.size(), enrolled, rejected, results);
+	}
+
+	private static String rootMessage(Throwable ex) {
+		Throwable cur = ex;
+		while (cur.getCause() != null && cur.getCause() != cur) {
+			cur = cur.getCause();
+		}
+		return cur.getMessage() == null ? ex.getClass().getSimpleName() : cur.getMessage();
 	}
 
 	@Transactional
