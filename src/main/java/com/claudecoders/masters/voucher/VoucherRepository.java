@@ -16,4 +16,17 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
 			ORDER BY voucher.createdAt DESC
 			""")
 	List<Voucher> findByPaymentStudentIdOrderByCreatedAtDesc(@Param("studentId") UUID studentId);
+
+	@Query("""
+			SELECT DISTINCT voucher
+			FROM Voucher voucher
+			JOIN voucher.payments voucherPayment
+			JOIN voucherPayment.payment.student student
+			JOIN student.user user
+			WHERE (:search IS NULL
+				OR LOWER(student.cui) LIKE LOWER(CONCAT('%', :search, '%'))
+				OR LOWER(user.dni) LIKE LOWER(CONCAT('%', :search, '%')))
+			ORDER BY voucher.createdAt DESC
+			""")
+	List<Voucher> search(@Param("search") String search);
 }

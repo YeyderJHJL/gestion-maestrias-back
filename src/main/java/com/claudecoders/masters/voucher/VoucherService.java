@@ -49,8 +49,11 @@ public class VoucherService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<VoucherResponse> findAll() {
-		return voucherRepository.findAll().stream()
+	public List<VoucherResponse> findAll(String search) {
+		List<Voucher> vouchers = (search == null || search.isBlank())
+				? voucherRepository.findAll()
+				: voucherRepository.search(search.trim());
+		return vouchers.stream()
 				.map(this::toResponse)
 				.toList();
 	}
