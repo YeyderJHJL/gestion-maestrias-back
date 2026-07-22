@@ -49,8 +49,11 @@ public class VoucherService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<VoucherResponse> findAll() {
-		return voucherRepository.findAll().stream()
+	public List<VoucherResponse> findAll(String search) {
+		List<Voucher> vouchers = (search == null || search.isBlank())
+				? voucherRepository.findAll()
+				: voucherRepository.search(search.trim());
+		return vouchers.stream()
 				.map(this::toResponse)
 				.toList();
 	}
@@ -122,6 +125,7 @@ public class VoucherService {
 		voucher.setState(state);
 		voucher.setFile(file);
 		voucher.setObservation(request.observation());
+		voucher.setOperationNumber(request.operationNumber());
 		voucher.getPayments().clear();
 		payments.forEach(voucher::addPayment);
 	}
@@ -154,6 +158,7 @@ public class VoucherService {
 				state.getName(),
 				storedFileService.toSummary(voucher.getFile()),
 				voucher.getObservation(),
+				voucher.getOperationNumber(),
 				voucher.getCreatedAt(),
 				voucher.getUpdatedAt()
 		);

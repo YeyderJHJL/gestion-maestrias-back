@@ -18,6 +18,7 @@ public record VoucherResponse(
 		String stateName,
 		StoredFileSummaryResponse file,
 		String observation,
+		String operationNumber,
 		Instant createdAt,
 		Instant updatedAt
 ) {

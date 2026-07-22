@@ -1,5 +1,7 @@
 package com.claudecoders.masters.enrollment;
 
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkRequest;
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkResponse;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
@@ -71,6 +73,19 @@ public class EnrollmentController {
 	public ResponseEntity<ApiResponse<EnrollmentResponse>> create(@Valid @RequestBody EnrollmentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.ok(enrollmentService.create(request), "Enrollment created"));
+	}
+
+	@Operation(summary = "Bulk create enrollments",
+		description = "Enrolls multiple students into one course/semester. Each row is saved independently: "
+			+ "a failure on one student does not roll back the others already enrolled.")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.TEACHER },
+		description = "Bulk-create enrollments (only ADMIN and TEACHER can access)")
+	@PostMapping("/bulk")
+	public ResponseEntity<ApiResponse<EnrollmentBulkResponse>> createBulk(
+			@Valid @RequestBody EnrollmentBulkRequest request
+	) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiResponse.ok(enrollmentService.createBulk(request), "Bulk enrollment processed"));
 	}
 
 	@Operation(summary = "Update enrollment")
