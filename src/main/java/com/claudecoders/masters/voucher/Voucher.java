@@ -1,6 +1,7 @@
 package com.claudecoders.masters.voucher;
 
 import com.claudecoders.masters.file.StoredFile;
+import com.claudecoders.masters.payment.Payment;
 import com.claudecoders.masters.shared.audit.Auditable;
 import com.claudecoders.masters.shared.audit.BaseEntity;
 import com.claudecoders.masters.state.State;
@@ -77,6 +78,13 @@ public class Voucher extends BaseEntity implements Auditable {
 
 	public List<VoucherPayment> getPayments() {
 		return payments;
+	}
+
+	public void addPayment(Payment payment) {
+		VoucherPayment voucherPayment = new VoucherPayment(this, payment);
+		if (!payments.contains(voucherPayment)) {
+			payments.add(voucherPayment);
+		}
 	}
 
 	public State getState() {

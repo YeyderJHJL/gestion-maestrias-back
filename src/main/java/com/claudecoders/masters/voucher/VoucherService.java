@@ -123,7 +123,7 @@ public class VoucherService {
 		voucher.setFile(file);
 		voucher.setObservation(request.observation());
 		voucher.getPayments().clear();
-		payments.forEach(payment -> new VoucherPayment(voucher, payment));
+		payments.forEach(voucher::addPayment);
 	}
 
 	private VoucherResponse toResponse(Voucher voucher) {

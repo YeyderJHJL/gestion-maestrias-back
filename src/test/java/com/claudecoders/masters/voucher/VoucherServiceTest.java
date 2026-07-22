@@ -70,7 +70,7 @@ class VoucherServiceTest {
 		state.setCode("UPLOADED");
 		state.setName("Cargado");
 		VoucherRequest request = new VoucherRequest(
-				new BigDecimal("500.00"),
+				new BigDecimal("840.00"),
 				List.of(new VoucherPaymentRequest(firstPayment.getId()), new VoucherPaymentRequest(secondPayment.getId())),
 				state.getId(),
 				UUID.randomUUID(),
@@ -85,7 +85,7 @@ class VoucherServiceTest {
 
 		VoucherResponse response = voucherService.create(request);
 
-		assertEquals(new BigDecimal("500.00"), response.declaredAmount());
+		assertEquals(new BigDecimal("840.00"), response.declaredAmount());
 		assertEquals(2, response.payments().size());
 		assertEquals(List.of(firstPayment.getId(), secondPayment.getId()),
 				response.payments().stream().map(payment -> payment.paymentId()).toList());
