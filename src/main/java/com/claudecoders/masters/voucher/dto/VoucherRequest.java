@@ -3,8 +3,10 @@ package com.claudecoders.masters.voucher.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +16,7 @@ public record VoucherRequest(
 		@NotEmpty List<@Valid VoucherPaymentRequest> payments,
 		@NotNull Integer stateId,
 		@NotNull UUID fileId,
-		String observation
+		String observation,
+		@NotBlank @Size(max = 50) String operationNumber
 ) {
 }

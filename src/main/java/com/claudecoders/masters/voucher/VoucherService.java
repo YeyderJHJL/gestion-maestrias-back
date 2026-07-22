@@ -122,6 +122,7 @@ public class VoucherService {
 		voucher.setState(state);
 		voucher.setFile(file);
 		voucher.setObservation(request.observation());
+		voucher.setOperationNumber(request.operationNumber());
 		voucher.getPayments().clear();
 		payments.forEach(voucher::addPayment);
 	}
@@ -154,6 +155,7 @@ public class VoucherService {
 				state.getName(),
 				storedFileService.toSummary(voucher.getFile()),
 				voucher.getObservation(),
+				voucher.getOperationNumber(),
 				voucher.getCreatedAt(),
 				voucher.getUpdatedAt()
 		);

@@ -74,7 +74,8 @@ class VoucherServiceTest {
 				List.of(new VoucherPaymentRequest(firstPayment.getId()), new VoucherPaymentRequest(secondPayment.getId())),
 				state.getId(),
 				UUID.randomUUID(),
-				null
+				null,
+				"OP-123456"
 		);
 
 		when(paymentService.getReference(firstPayment.getId())).thenReturn(firstPayment);
@@ -100,7 +101,8 @@ class VoucherServiceTest {
 				List.of(new VoucherPaymentRequest(payment.getId())),
 				1,
 				UUID.randomUUID(),
-				null
+				null,
+				"OP-123456"
 		);
 		when(paymentService.getReference(payment.getId())).thenReturn(payment);
 
@@ -119,7 +121,8 @@ class VoucherServiceTest {
 				List.of(new VoucherPaymentRequest(firstPayment.getId()), new VoucherPaymentRequest(secondPayment.getId())),
 				1,
 				UUID.randomUUID(),
-				null
+				null,
+				"OP-123456"
 		);
 		when(paymentService.getReference(firstPayment.getId())).thenReturn(firstPayment);
 		when(paymentService.getReference(secondPayment.getId())).thenReturn(secondPayment);

@@ -34,7 +34,8 @@ public class Voucher extends BaseEntity implements Auditable {
 			"declaredAmount",
 			"state",
 			"file",
-			"observation"
+			"observation",
+			"operationNumber"
 	);
 
 	@Id
@@ -59,6 +60,9 @@ public class Voucher extends BaseEntity implements Auditable {
 
 	@Column(name = "observation", columnDefinition = "TEXT")
 	private String observation;
+
+	@Column(name = "operation_number", length = 50)
+	private String operationNumber;
 
 	public UUID getId() {
 		return id;
@@ -109,6 +113,14 @@ public class Voucher extends BaseEntity implements Auditable {
 
 	public void setObservation(String observation) {
 		this.observation = observation;
+	}
+
+	public String getOperationNumber() {
+		return operationNumber;
+	}
+
+	public void setOperationNumber(String operationNumber) {
+		this.operationNumber = operationNumber;
 	}
 
 	@Override
