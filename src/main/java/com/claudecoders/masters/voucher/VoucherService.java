@@ -153,6 +153,8 @@ public class VoucherService {
 				"%s %s".formatted(user.getFirstName(), user.getLastName()),
 				user.getEmail(),
 				student.getPaymentCode(),
+				user.getDni(),
+				student.getCui(),
 				state.getId(),
 				state.getCode(),
 				state.getName(),
