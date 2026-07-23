@@ -13,6 +13,8 @@ public record VoucherResponse(
 		String studentName,
 		String studentEmail,
 		String studentPaymentCode,
+		String studentDni,
+		String studentCui,
 		Integer stateId,
 		String stateCode,
 		String stateName,
