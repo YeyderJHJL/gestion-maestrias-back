@@ -3,6 +3,8 @@ package com.claudecoders.masters.grade;
 import com.claudecoders.masters.grade.dto.GradeRequest;
 import com.claudecoders.masters.grade.dto.GradeResponse;
 import com.claudecoders.masters.grade.dto.GradeUpdateRequest;
+import com.claudecoders.masters.grade.dto.GradeBulkRowRequest;
+import com.claudecoders.masters.grade.dto.GradeBulkResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
 import com.claudecoders.masters.shared.security.SecurityHelper;
@@ -86,5 +88,13 @@ public class GradeController {
 	public ApiResponse<Void> delete(@PathVariable UUID id, @RequestParam @NotBlank String reason) {
 		gradeService.delete(id, reason, SecurityHelper.currentUserId());
 		return ApiResponse.ok(null, "Grade deleted");
+	}
+
+	@Operation(summary = "Bulk import grades")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.TEACHER},
+		description = "Bulk import grades for a course (only ADMIN and TEACHER can access)")
+	@PostMapping("/bulk/{courseId}")
+	public ApiResponse<GradeBulkResponse> createBulk(@PathVariable UUID courseId, @Valid @RequestBody List<GradeBulkRowRequest> rows) {
+		return ApiResponse.ok(gradeService.createBulk(courseId, rows, SecurityHelper.currentUserId()), "Bulk import processed");
 	}
 }

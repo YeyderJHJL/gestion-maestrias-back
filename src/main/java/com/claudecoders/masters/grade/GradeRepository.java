@@ -2,6 +2,7 @@ package com.claudecoders.masters.grade;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +22,6 @@ public interface GradeRepository extends JpaRepository<Grade, UUID> {
     @Param("courseId") UUID courseId,
     @Param("studentId") UUID studentId
   );
+
+  Optional<Grade> findByEnrollment_Id(UUID enrollmentId);
 }

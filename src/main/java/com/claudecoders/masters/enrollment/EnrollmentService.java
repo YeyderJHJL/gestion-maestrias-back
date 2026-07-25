@@ -21,6 +21,7 @@ import com.claudecoders.masters.user.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -211,5 +212,10 @@ public class EnrollmentService {
 				enrollment.getCreatedAt(),
 				enrollment.getUpdatedAt()
 		);
+	}
+
+	@Transactional(readOnly = true)
+	public Optional<Enrollment> findByCourseAndCui(UUID courseId, String cui) {
+		return enrollmentRepository.findByCourse_IdAndStudent_Cui(courseId, cui);
 	}
 }
