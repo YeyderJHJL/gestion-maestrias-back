@@ -18,4 +18,10 @@ public class StateService {
 		return stateRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("State", id));
 	}
+
+	@Transactional(readOnly = true)
+	public State findByEntityTypeAndCode(String entityType, String code) {
+		return stateRepository.findByEntityTypeAndCode(entityType, code)
+				.orElseThrow(() -> new ResourceNotFoundException("State", "entityType=%s, code=%s".formatted(entityType, code)));
+	}
 }
