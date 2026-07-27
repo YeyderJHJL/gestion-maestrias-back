@@ -137,7 +137,18 @@ public class TeacherService {
 
 	@Transactional
 	public void delete(UUID id) {
-		teacherRepository.delete(findEntity(id));
+		Teacher teacher = findEntity(id);
+		userService.delete(teacher.getUser().getId());
+	}
+
+	@Transactional
+	public void deleteBulk(List<UUID> idTeachers) {
+		List<UUID> userIds = idTeachers.stream()
+				.distinct()
+				.map(this::findEntity)
+				.map(teacher -> teacher.getUser().getId())
+				.toList();
+		userIds.forEach(userService::delete);
 	}
 
 	@Transactional(readOnly = true)

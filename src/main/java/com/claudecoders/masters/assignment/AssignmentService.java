@@ -104,8 +104,9 @@ public class AssignmentService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AssignmentResponse> findByCourse(UUID courseId) {
+	public List<AssignmentResponse> findByCourse(UUID courseId, UUID userId) {
 		courseService.getReference(courseId);
+		courseService.checkAccess(courseId, userId);
 		return assignmentRepository.findByCourse_IdOrderByAssignmentDateAsc(courseId)
 					.stream()
 					.map(this::toResponse)

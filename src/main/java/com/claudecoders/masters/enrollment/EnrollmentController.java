@@ -1,9 +1,12 @@
 package com.claudecoders.masters.enrollment;
 
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkRequest;
+import com.claudecoders.masters.enrollment.dto.EnrollmentBulkResponse;
 import com.claudecoders.masters.enrollment.dto.EnrollmentRequest;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,7 +50,7 @@ public class EnrollmentController {
 			return ApiResponse.ok(enrollmentService.findByStudent(studentId));
 		}
 		if (courseId != null) {
-			return ApiResponse.ok(enrollmentService.findByCourse(courseId));
+			return ApiResponse.ok(enrollmentService.findByCourse(courseId, SecurityHelper.currentUserId()));
 		}
 		if (yearPromotion != null) {
 			return ApiResponse.ok(enrollmentService.findByPromotion(yearPromotion));
@@ -70,6 +73,19 @@ public class EnrollmentController {
 	public ResponseEntity<ApiResponse<EnrollmentResponse>> create(@Valid @RequestBody EnrollmentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.ok(enrollmentService.create(request), "Enrollment created"));
+	}
+
+	@Operation(summary = "Bulk create enrollments",
+		description = "Enrolls multiple students into one course/semester. Each row is saved independently: "
+			+ "a failure on one student does not roll back the others already enrolled.")
+	@Authorize(roles = { UserRole.ADMIN, UserRole.TEACHER },
+		description = "Bulk-create enrollments (only ADMIN and TEACHER can access)")
+	@PostMapping("/bulk")
+	public ResponseEntity<ApiResponse<EnrollmentBulkResponse>> createBulk(
+			@Valid @RequestBody EnrollmentBulkRequest request
+	) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiResponse.ok(enrollmentService.createBulk(request), "Bulk enrollment processed"));
 	}
 
 	@Operation(summary = "Update enrollment")

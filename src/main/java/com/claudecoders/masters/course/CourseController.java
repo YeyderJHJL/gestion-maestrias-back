@@ -8,6 +8,7 @@ import com.claudecoders.masters.enrollment.EnrollmentService;
 import com.claudecoders.masters.enrollment.dto.EnrollmentResponse;
 import com.claudecoders.masters.shared.exception.ApiResponse;
 import com.claudecoders.masters.shared.security.Authorize;
+import com.claudecoders.masters.shared.security.SecurityHelper;
 import com.claudecoders.masters.shared.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,7 +58,7 @@ public class CourseController {
 		description = "Get course by id (only ADMIN, COORDINATOR, TEACHER and STUDENT can access)")
 	@GetMapping("/{id}")
 	public ApiResponse<CourseResponse> findById(@PathVariable UUID id) {
-		return ApiResponse.ok(courseService.findById(id));
+		return ApiResponse.ok(courseService.findById(id, SecurityHelper.currentUserId()));
 	}
 
   @Operation(summary = "Get teachers by course")
@@ -65,7 +66,7 @@ public class CourseController {
   	description = "Get teachers assigned to a course")
   @GetMapping("/{id}/teachers")
   public ApiResponse<List<AssignmentResponse>> findTeachersByCourse(@PathVariable UUID id) {
-    return ApiResponse.ok(assignmentService.findByCourse(id));
+    return ApiResponse.ok(assignmentService.findByCourse(id, SecurityHelper.currentUserId()));
   }
 
   @Operation(summary = "Get students by course")
@@ -73,7 +74,7 @@ public class CourseController {
     description = "Get students enrolled in a course (only ADMIN, COORDINATOR and TEACHER can access)")
   @GetMapping("/{id}/students")
   public ApiResponse<List<EnrollmentResponse>> findStudentsByCourse(@PathVariable UUID id) {
-    return ApiResponse.ok(enrollmentService.findByCourse(id));
+    return ApiResponse.ok(enrollmentService.findByCourse(id, SecurityHelper.currentUserId()));
   }
 
 	@Operation(summary = "Get courses by teacher")

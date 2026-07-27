@@ -21,7 +21,9 @@ import com.claudecoders.masters.user.dto.UserCreateRequest;
 import com.claudecoders.masters.user.dto.UserRequest;
 import com.claudecoders.masters.user.dto.UserProfileResponse;
 import com.claudecoders.masters.user.dto.UserResponse;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,6 +100,26 @@ public class UserService {
 	public UserProfileResponse update(UUID id, UserCreateRequest request) {
 		validateProfileRequest(request);
 		User user = findEntity(id);
+		if (!Objects.equals(user.getEmail(), request.email()) && userRepository.existsByEmail(request.email())) {
+			throw new BusinessException("Ya existe un usuario con el correo " + request.email());
+		}
+		if (!Objects.equals(user.getDni(), request.dni())
+				&& request.dni() != null
+				&& userRepository.existsByDni(request.dni())) {
+			throw new BusinessException("Ya existe un usuario con el DNI " + request.dni());
+		}
+		if (request.role() == UserRole.STUDENT) {
+			Student student = studentRepository.findByUser_Id(id).orElse(null);
+			if ((student == null || !Objects.equals(student.getCui(), request.student().cui()))
+					&& studentRepository.existsByCui(request.student().cui())) {
+				throw new BusinessException("Ya existe un estudiante con el CUI " + request.student().cui());
+			}
+			if ((student == null || !Objects.equals(student.getPaymentCode(), request.student().paymentCode()))
+					&& studentRepository.existsByPaymentCode(request.student().paymentCode())) {
+				throw new BusinessException("Ya existe un estudiante con el codigo de pago "
+							+ request.student().paymentCode());
+			}
+		}
 		userAccountService.evictUser(user.getGoogleSub());
 		applyRequest(user, request);
 		User savedUser = userRepository.save(user);
@@ -131,6 +153,14 @@ public class UserService {
 	@Transactional
 	public UserResponse update(UUID id, UserRequest request) {
 		User user = findEntity(id);
+		if (!Objects.equals(user.getEmail(), request.email()) && userRepository.existsByEmail(request.email())) {
+			throw new BusinessException("Ya existe un usuario con el correo " + request.email());
+		}
+		if (!Objects.equals(user.getDni(), request.dni())
+				&& request.dni() != null
+				&& userRepository.existsByDni(request.dni())) {
+			throw new BusinessException("Ya existe un usuario con el DNI " + request.dni());
+		}
 		userAccountService.evictUser(user.getGoogleSub());
 		applyRequest(user, request);
 		return toResponse(userRepository.save(user));
@@ -140,6 +170,8 @@ public class UserService {
 	public void delete(UUID id) {
 		User user = findEntity(id);
 		userAccountService.evictUser(user.getGoogleSub());
+		teacherRepository.findByUser_Id(id).ifPresent(teacherRepository::delete);
+		studentRepository.findByUser_Id(id).ifPresent(studentRepository::delete);
 		userRepository.delete(user);
 	}
 
@@ -287,11 +319,15 @@ public class UserService {
 	private void createInitialPayments(Student student) {
 		Program program = programRepository.findFirstByOrderByIdAsc()
 				.orElseThrow(() -> new BusinessException("Debe existir un programa configurado para generar pagos"));
+		// Provisional: este monto deberá provenir de la configuración del programa.
+		final BigDecimal paymentAmount = new BigDecimal("420.00");
 
 		for (int number = 1; number <= program.getPensionCount(); number++) {
 			Payment payment = new Payment();
 			payment.setStudent(student);
 			payment.setPaymentNumber(number);
+			payment.setConcept(number == 1 ? "Matrícula" : "Pensión N° " + number);
+			payment.setAmount(paymentAmount);
 			paymentRepository.save(payment);
 		}
 	}

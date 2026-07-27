@@ -13,6 +13,7 @@ import com.claudecoders.masters.student.dto.StudentImportResponse;
 import com.claudecoders.masters.student.dto.StudentImportRowResult;
 import com.claudecoders.masters.user.User;
 import com.claudecoders.masters.user.UserRepository;
+import java.math.BigDecimal;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -139,12 +140,15 @@ public class StudentImportService {
 			));
 		}
 		Student savedStudent = studentRepository.save(student);
+		// Provisional: este monto deberá provenir de la configuración del programa.
+		final BigDecimal paymentAmount = new BigDecimal("420.00");
 
 		for (int number = 1; number <= program.getPensionCount(); number++) {
 			Payment payment = new Payment();
 			payment.setStudent(savedStudent);
 			payment.setPaymentNumber(number);
 			payment.setConcept(number == 1 ? "Matrícula" : "Pensión N° " + number);
+			payment.setAmount(paymentAmount);
 			paymentRepository.save(payment);
 		}
 		return savedStudent;

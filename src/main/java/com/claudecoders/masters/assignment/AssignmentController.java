@@ -47,7 +47,7 @@ public class AssignmentController {
 		description = "List assignments for a course (only ADMIN and COORDINATOR can access)")
 	@GetMapping("/courses/{courseId}")
 	public ApiResponse<List<AssignmentResponse>> findByCourse(@PathVariable UUID courseId) {
-		return ApiResponse.ok(assignmentService.findByCourse(courseId));
+		return ApiResponse.ok(assignmentService.findByCourse(courseId, SecurityHelper.currentUserId()));
 	}
 
 	@Operation(summary = "List assignments by teacher")

@@ -12,7 +12,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
@@ -27,10 +31,11 @@ import org.hibernate.annotations.UuidGenerator.Style;
 public class Voucher extends BaseEntity implements Auditable {
 
 	private static final Set<String> AUDIT_FIELDS = Set.of(
-			"payment",
+			"declaredAmount",
 			"state",
 			"file",
-			"observation"
+			"observation",
+			"operationNumber"
 	);
 
 	@Id
@@ -39,9 +44,11 @@ public class Voucher extends BaseEntity implements Auditable {
 	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_payment", nullable = false)
-	private Payment payment;
+	@Column(name = "declared_amount", nullable = false, precision = 10, scale = 2)
+	private BigDecimal declaredAmount;
+
+	@OneToMany(mappedBy = "voucher", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+	private List<VoucherPayment> payments = new ArrayList<>();
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "id_state", nullable = false)
@@ -54,6 +61,9 @@ public class Voucher extends BaseEntity implements Auditable {
 	@Column(name = "observation", columnDefinition = "TEXT")
 	private String observation;
 
+	@Column(name = "operation_number", length = 50)
+	private String operationNumber;
+
 	public UUID getId() {
 		return id;
 	}
@@ -62,12 +72,23 @@ public class Voucher extends BaseEntity implements Auditable {
 		this.id = id;
 	}
 
-	public Payment getPayment() {
-		return payment;
+	public BigDecimal getDeclaredAmount() {
+		return declaredAmount;
 	}
 
-	public void setPayment(Payment payment) {
-		this.payment = payment;
+	public void setDeclaredAmount(BigDecimal declaredAmount) {
+		this.declaredAmount = declaredAmount;
+	}
+
+	public List<VoucherPayment> getPayments() {
+		return payments;
+	}
+
+	public void addPayment(Payment payment) {
+		VoucherPayment voucherPayment = new VoucherPayment(this, payment);
+		if (!payments.contains(voucherPayment)) {
+			payments.add(voucherPayment);
+		}
 	}
 
 	public State getState() {
@@ -92,6 +113,14 @@ public class Voucher extends BaseEntity implements Auditable {
 
 	public void setObservation(String observation) {
 		this.observation = observation;
+	}
+
+	public String getOperationNumber() {
+		return operationNumber;
+	}
+
+	public void setOperationNumber(String operationNumber) {
+		this.operationNumber = operationNumber;
 	}
 
 	@Override

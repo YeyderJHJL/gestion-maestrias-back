@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Vouchers", description = "Voucher management")
@@ -32,12 +33,13 @@ public class VoucherController {
 		this.voucherService = voucherService;
 	}
 
-	@Operation(summary = "List vouchers")
+	@Operation(summary = "List vouchers",
+			description = "Optionally filter by student DNI or CUI (partial match)")
 	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
 			description = "List all vouchers (only ADMIN and COORDINATOR can access)")
 	@GetMapping
-	public ApiResponse<List<VoucherResponse>> findAll() {
-		return ApiResponse.ok(voucherService.findAll());
+	public ApiResponse<List<VoucherResponse>> findAll(@RequestParam(required = false) String search) {
+		return ApiResponse.ok(voucherService.findAll(search));
 	}
 
 	@Operation(summary = "List my vouchers",

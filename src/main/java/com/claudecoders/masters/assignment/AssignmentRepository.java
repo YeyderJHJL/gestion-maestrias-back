@@ -14,4 +14,6 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 	List<Assignment> findByCourse_IdOrderByAssignmentDateAsc(UUID courseId);
 
 	List<Assignment> findByTeacher_IdOrderByAssignmentDateAsc(UUID teacherId);
+
+	boolean existsByCourse_IdAndTeacher_User_Id(UUID courseId, UUID userId);
 }
