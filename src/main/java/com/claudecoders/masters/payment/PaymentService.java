@@ -43,13 +43,30 @@ public class PaymentService {
 				.toList();
 	}
 
-	private PaymentResponse toResponse(Payment payment) {
-		String latestVoucherStateCode = voucherPaymentRepository
-				.findFirstByPayment_IdOrderByVoucher_CreatedAtDesc(payment.getId())
+	@Transactional(readOnly = true)
+	public List<Payment> findByStudentId(UUID studentId) {
+		return paymentRepository.findByStudent_IdOrderByPaymentNumberAsc(studentId);
+	}
+
+	@Transactional(readOnly = true)
+	public List<PaymentResponse> findPaymentResponsesByStudentId(UUID studentId) {
+		return findByStudentId(studentId).stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public String latestVoucherStateCode(UUID paymentId) {
+		return voucherPaymentRepository
+				.findFirstByPayment_IdOrderByVoucher_CreatedAtDesc(paymentId)
 				.map(VoucherPayment::getVoucher)
 				.map(voucher -> voucher.getState())
 				.map(state -> state.getCode())
 				.orElse(null);
+	}
+
+	private PaymentResponse toResponse(Payment payment) {
+		String latestVoucherStateCode = latestVoucherStateCode(payment.getId());
 		return new PaymentResponse(
 				payment.getId(),
 				payment.getPaymentNumber(),

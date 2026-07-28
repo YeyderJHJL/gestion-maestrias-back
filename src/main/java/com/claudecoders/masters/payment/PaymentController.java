@@ -7,7 +7,9 @@ import com.claudecoders.masters.shared.security.Authorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,5 +31,14 @@ public class PaymentController {
 	@GetMapping("/my")
 	public ApiResponse<List<PaymentResponse>> findMyPayments() {
 		return ApiResponse.ok(paymentService.findMyPayments());
+	}
+
+	@Operation(summary = "List a student's payments",
+			description = "Returns a student's payments with their latest voucher state, for review purposes")
+	@Authorize(roles = {UserRole.ADMIN, UserRole.COORDINATOR},
+			description = "List a student's payments (only ADMIN and COORDINATOR can access)")
+	@GetMapping("/student/{studentId}")
+	public ApiResponse<List<PaymentResponse>> findByStudentId(@PathVariable UUID studentId) {
+		return ApiResponse.ok(paymentService.findPaymentResponsesByStudentId(studentId));
 	}
 }

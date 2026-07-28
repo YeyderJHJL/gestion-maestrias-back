@@ -10,6 +10,7 @@ public record VoucherResponse(
 		UUID id,
 		BigDecimal declaredAmount,
 		List<VoucherPaymentResponse> payments,
+		UUID studentId,
 		String studentName,
 		String studentEmail,
 		String studentPaymentCode,
