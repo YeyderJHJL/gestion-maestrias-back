@@ -22,11 +22,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class VoucherService {
+
+	private static final String VOUCHER_STATE_VALIDATED = "VALIDATED";
 
 	private final VoucherRepository voucherRepository;
 	private final PaymentService paymentService;
@@ -120,14 +123,58 @@ public class VoucherService {
 			throw new BusinessException("El monto declarado debe coincidir con la suma de los pagos seleccionados");
 		}
 		State state = stateService.getReference(request.stateId());
+		validatePreviousPayments(studentId, payments, state);
 		StoredFile file = storedFileService.getReference(request.fileId(), FilePurpose.PAYMENT_VOUCHER);
 		voucher.setDeclaredAmount(request.declaredAmount());
 		voucher.setState(state);
 		voucher.setFile(file);
 		voucher.setObservation(request.observation());
 		voucher.setOperationNumber(request.operationNumber());
-		voucher.getPayments().clear();
-		payments.forEach(voucher::addPayment);
+		voucher.getPayments().removeIf(voucherPayment -> !paymentIds.contains(voucherPayment.getPayment().getId()));
+		Set<UUID> existingPaymentIds = voucher.getPayments().stream()
+				.map(voucherPayment -> voucherPayment.getPayment().getId())
+				.collect(Collectors.toSet());
+		payments.stream()
+				.filter(payment -> !existingPaymentIds.contains(payment.getId()))
+				.forEach(voucher::addPayment);
+	}
+
+	private void validatePreviousPayments(UUID studentId, List<Payment> payments, State state) {
+		if (payments.isEmpty()) {
+			return;
+		}
+		int minPaymentNumber = payments.stream()
+				.map(Payment::getPaymentNumber)
+				.min(Integer::compareTo)
+				.orElseThrow();
+		List<Payment> previousPayments = paymentService.findByStudentId(studentId).stream()
+				.filter(payment -> payment.getPaymentNumber() < minPaymentNumber)
+				.toList();
+
+		List<Integer> unsubmittedPaymentNumbers = previousPayments.stream()
+				.filter(payment -> paymentService.latestVoucherStateCode(payment.getId()) == null)
+				.map(Payment::getPaymentNumber)
+				.toList();
+		if (!unsubmittedPaymentNumbers.isEmpty()) {
+			throw new BusinessException(
+					"Debe presentar primero el comprobante de los pagos anteriores N° " + joinNumbers(unsubmittedPaymentNumbers));
+		}
+
+		if (VOUCHER_STATE_VALIDATED.equals(state.getCode())) {
+			List<Integer> unvalidatedPaymentNumbers = previousPayments.stream()
+					.filter(payment -> !VOUCHER_STATE_VALIDATED.equals(paymentService.latestVoucherStateCode(payment.getId())))
+					.map(Payment::getPaymentNumber)
+					.toList();
+			if (!unvalidatedPaymentNumbers.isEmpty()) {
+				throw new BusinessException(
+						"No puede validar este pago porque los pagos anteriores N° " + joinNumbers(unvalidatedPaymentNumbers)
+								+ " aún no están validados");
+			}
+		}
+	}
+
+	private String joinNumbers(List<Integer> numbers) {
+		return numbers.stream().map(String::valueOf).collect(Collectors.joining(", "));
 	}
 
 	private VoucherResponse toResponse(Voucher voucher) {
@@ -150,6 +197,7 @@ public class VoucherService {
 				voucher.getId(),
 				voucher.getDeclaredAmount(),
 				payments,
+				student.getId(),
 				"%s %s".formatted(user.getFirstName(), user.getLastName()),
 				user.getEmail(),
 				student.getPaymentCode(),
