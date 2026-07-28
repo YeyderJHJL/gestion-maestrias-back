@@ -132,6 +132,92 @@ class VoucherServiceTest {
 		assertEquals("Todos los pagos de un voucher deben pertenecer al mismo estudiante", exception.getMessage());
 	}
 
+	@Test
+	void createRejectsSkippingAnUnsubmittedPreviousPayment() {
+		Student student = student();
+		Payment previousPayment = payment(student, 1);
+		Payment currentPayment = payment(student, 2);
+		State uploadedState = new State();
+		uploadedState.setId(1);
+		uploadedState.setCode("UPLOADED");
+		uploadedState.setName("Cargado");
+		VoucherRequest request = new VoucherRequest(
+				new BigDecimal("420.00"),
+				List.of(new VoucherPaymentRequest(currentPayment.getId())),
+				uploadedState.getId(),
+				UUID.randomUUID(),
+				null,
+				"OP-123456"
+		);
+		when(paymentService.getReference(currentPayment.getId())).thenReturn(currentPayment);
+		when(stateService.getReference(uploadedState.getId())).thenReturn(uploadedState);
+		when(paymentService.findByStudentId(student.getId())).thenReturn(List.of(previousPayment));
+		when(paymentService.latestVoucherStateCode(previousPayment.getId())).thenReturn(null);
+
+		BusinessException exception = assertThrows(BusinessException.class, () -> voucherService.create(request));
+
+		assertEquals("Debe presentar primero el comprobante de los pagos anteriores N° 1", exception.getMessage());
+		verify(voucherRepository, never()).save(any());
+	}
+
+	@Test
+	void createRejectsValidatingWhenAPreviousPaymentIsNotYetValidated() {
+		Student student = student();
+		Payment previousPayment = payment(student, 1);
+		Payment currentPayment = payment(student, 2);
+		State validatedState = new State();
+		validatedState.setId(2);
+		validatedState.setCode("VALIDATED");
+		validatedState.setName("Validado");
+		VoucherRequest request = new VoucherRequest(
+				new BigDecimal("420.00"),
+				List.of(new VoucherPaymentRequest(currentPayment.getId())),
+				validatedState.getId(),
+				UUID.randomUUID(),
+				null,
+				"OP-123456"
+		);
+		when(paymentService.getReference(currentPayment.getId())).thenReturn(currentPayment);
+		when(stateService.getReference(validatedState.getId())).thenReturn(validatedState);
+		when(paymentService.findByStudentId(student.getId())).thenReturn(List.of(previousPayment));
+		when(paymentService.latestVoucherStateCode(previousPayment.getId())).thenReturn("UPLOADED");
+
+		BusinessException exception = assertThrows(BusinessException.class, () -> voucherService.create(request));
+
+		assertEquals("No puede validar este pago porque los pagos anteriores N° 1 aún no están validados",
+				exception.getMessage());
+		verify(voucherRepository, never()).save(any());
+	}
+
+	@Test
+	void createAllowsValidatingWhenPreviousPaymentsAreAlreadyValidated() {
+		Student student = student();
+		Payment previousPayment = payment(student, 1);
+		Payment currentPayment = payment(student, 2);
+		State validatedState = new State();
+		validatedState.setId(2);
+		validatedState.setCode("VALIDATED");
+		validatedState.setName("Validado");
+		VoucherRequest request = new VoucherRequest(
+				new BigDecimal("420.00"),
+				List.of(new VoucherPaymentRequest(currentPayment.getId())),
+				validatedState.getId(),
+				UUID.randomUUID(),
+				null,
+				"OP-123456"
+		);
+		when(paymentService.getReference(currentPayment.getId())).thenReturn(currentPayment);
+		when(stateService.getReference(validatedState.getId())).thenReturn(validatedState);
+		when(storedFileService.getReference(any(), any())).thenReturn(new StoredFile());
+		when(paymentService.findByStudentId(student.getId())).thenReturn(List.of(previousPayment));
+		when(paymentService.latestVoucherStateCode(previousPayment.getId())).thenReturn("VALIDATED");
+		when(voucherRepository.save(any(Voucher.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		VoucherResponse response = voucherService.create(request);
+
+		assertEquals(1, response.payments().size());
+	}
+
 	private Student student() {
 		User user = new User();
 		user.setFirstName("Ana");
