@@ -14,8 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-@org.springframework.context.annotation.Profile("dev")
-public class GcsStorageService implements FileStorageService {
+public class GcsStorageService {
 
 	private final Storage storage;
 
@@ -57,7 +56,7 @@ public class GcsStorageService implements FileStorageService {
 		return url.toString();
 	}
 
-	public void delete(String objectKey) throws IOException {
+	public void delete(String objectKey) {
 		storage.delete(BlobId.of(bucket, objectKey));
 	}
 }
