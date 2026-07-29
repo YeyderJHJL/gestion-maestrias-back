@@ -26,7 +26,7 @@ public class StoredFileService {
 
 	private final StoredFileRepository fileRepository;
 	private final UserRepository userRepository;
-	private final FileStorageService gcsStorage;
+	private final GcsStorageService gcsStorage;
 
 	public StoredFileService(
 			StoredFileRepository fileRepository,
